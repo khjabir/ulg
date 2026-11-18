@@ -3,6 +3,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/khjabir/ulg/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/khjabir/ulg/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white">
   <img alt="React 19" src="https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white">
@@ -76,7 +77,7 @@ Every game sets its own levels. Today's games each have three:
 
 - **It never runs out.** Tap *New puzzle* and a fresh board appears. A generator built for each game guarantees there's exactly one solution, so you never have to guess.
 - **It tells you when something's wrong, and only then.** If a piece breaks its own rule (a 5 that isn't 5 cells, two kings in one row), the game names the rule and rings the piece. If you hit a real dead end (a Zap path that can't move, a Sumbroke board with no merges left), it says so and suggests a way back. It never looks ahead or gives away deductions: working those out is the game.
-- **Hints help, but make you wait.** A hint clears anything that can't be right and shows the next step. In Sumbroke and Zap, it takes you back to your last good position first. The Hint button fills like a progress bar as it recharges: the first hint is ready after 20 seconds of play, and each one after that takes a little longer (up to 90 seconds). That keeps hints for when you're truly stuck.
+- **Hints help, after a short wait.** A hint clears anything that can't be right and shows the next step. In Sumbroke and Zap, it takes you back to your last good position first. The Hint button fills like a progress bar for 10 seconds of play before each hint, so a quick tap can't replace thinking.
 - **It feels like a game table.** You get chunky tiles you drag around, wooden clacks, chimes as a path grows, a soft buzz on phones, and a wave of confetti when you solve it.
 - **Drawing is forgiving.** Zap's line follows your finger smoothly. In Swatches you can start a drag anywhere, even on the clue, and sweep one way and then back the other. You can also grab a drawn swatch by its edge to resize it. Drags that overshoot the board's edge still land on the edge row.
 - **You can challenge a friend.** Every board has a code, and *Challenge a friend* shares a link that rebuilds exactly the same puzzle.
@@ -103,7 +104,7 @@ Every game sets its own levels. Today's games each have three:
 
 ### Run it locally
 
-You need Node.js 20 or newer.
+You need Node.js 22 or newer (`.nvmrc` has the version CI uses).
 
 ```bash
 npm install
@@ -234,7 +235,7 @@ export const mygame: GameDef<MyPuzzle, MyState, number[]> = {
   progress,     // how much is done, for the progress bar
   hint,         // the next step, or a way back to the last good position
   check,        // optional: a piece breaking its own rule, or a true dead end, or null
-  hintWait,     // optional: how long the hint takes to recharge (20 s, then 30, 45… by default)
+  hintWait,     // optional: how long the hint takes to recharge (10 s by default)
   Board,        // draws the board; calls apply(next) for every move
   HowTo,        // the rules, shown before the first game
   Icon,         // the home-screen picture
@@ -255,6 +256,21 @@ export const mygame: GameDef<MyPuzzle, MyState, number[]> = {
 
 To rename a game, change `name` in its `index.tsx` and in `meta.ts`. Old addresses listed
 in `LEGACY_IDS` forward to the new ones, and saved progress moves across automatically.
+
+## Contributing
+
+Pull requests are welcome: bug fixes, polish, docs, and new games. Read
+[CONTRIBUTING.md](CONTRIBUTING.md) first; the pull request template walks you through
+the rest.
+
+Every pull request runs [CI](.github/workflows/ci.yml): a clean install, the puzzle
+engine tests, a production build, a type check, and a check that every page was built
+and the offline worker is complete. The built site is attached to the run, so
+reviewers can try it. Run the same commands locally before you push:
+
+```bash
+npm test && npm run build && npm run typecheck
+```
 
 ## Credits
 

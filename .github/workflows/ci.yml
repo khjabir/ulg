@@ -1,0 +1,70 @@
+name: CI
+
+# Every pull request, and every push to main, has to install cleanly, pass the puzzle
+# engine tests, build the static site and type-check. The same commands work locally:
+#   npm ci && npm test && npm run build && npm run typecheck
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new push to the same pull request cancels the run that's already going.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Puzzle engine tests
+        # Generates boards for every game and level, and checks each one is
+        # deterministic, has exactly one solution, can be solved with hints alone,
+        # and that problem warnings never fire early or stay silent at a dead end.
+        run: npm test
+
+      - name: Build the site
+        run: npm run build
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Check the build has every page and works offline
+        run: |
+          fail() { echo "::error::$1"; exit 1; }
+          for f in index.html 404.html sw.js puzzle-worker.js manifest.webmanifest logo.svg; do
+            test -s "out/$f" || fail "out/$f is missing"
+          done
+          for dir in src/app/*/; do
+            name=$(basename "$dir")
+            [ -f "$dir/page.tsx" ] || continue
+            test -s "out/$name/index.html" || fail "the $name page wasn't built (out/$name/index.html)"
+          done
+          grep -q 'const VERSION = "dev"' out/sw.js && fail "out/sw.js has no precache list: scripts/generate-sw.mjs didn't run"
+          echo "All pages built, and the offline worker precaches $(grep -o '"/[^"]*"' out/sw.js | wc -l) files."
+
+      - name: Upload the built site
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ulg-site-pr-${{ github.event.pull_request.number }}
+          path: out/
+          retention-days: 7

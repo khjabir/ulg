@@ -265,6 +265,35 @@ for (const game of games) {
     );
   }
 }
+// No predictions: a wrong move that breaks no rule yet stays quiet (only clashes are flagged).
+{
+  let quietWrong = 0;
+  for (let i = 1; i <= 40; i++) {
+    const seed = (i * 2654435761) >>> 0;
+    const dp = generators.sixdoku(i % 2 ? "easy" : "hard", seed) as D.SudokuPuzzle;
+    const values = dp.givens.slice();
+    for (let c = 0; c < 36; c++) {
+      if (values[c]) continue;
+      const free = D.candidates(values, c).filter((d) => d !== dp.solution[c]);
+      if (!free.length) continue;
+      values[c] = free[0];
+      const pr = D.check(dp, { values, notes: [] });
+      if (pr) fail(`sixdoku ${seed}: a wrong digit with no clash was flagged: "${pr.message}"`);
+      else quietWrong++;
+      break;
+    }
+    const tp = generators.tangle("medium", seed) as T.TanglePuzzle;
+    const st = tp.givens.slice();
+    const open = st.findIndex((v, c) => !v && T.check(tp, Object.assign(st.slice(), { [c]: tp.solution[c] === T.SUN ? T.MOON : T.SUN })) === null);
+    if (open >= 0) {
+      st[open] = tp.solution[open] === T.SUN ? T.MOON : T.SUN;
+      if (T.check(tp, st)) fail(`tangle ${seed}: a wrong piece that breaks no rule was flagged`);
+      else quietWrong++;
+    }
+  }
+  console.log(`no predictions: ${quietWrong} wrong-but-legal moves drew no warning`);
+}
+
 // Reported: a swatch that fits its own clue must not be flagged for crowding another.
 {
   const sp = generators.swatches("easy", codeToSeed("1LLD0J7")!) as P.SwatchesPuzzle;

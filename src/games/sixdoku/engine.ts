@@ -123,14 +123,25 @@ const UNITS: { name: "row" | "column" | "box"; cells: number[] }[] = [
   ...range(N).map((b) => ({ name: "box" as const, cells: range(N * N).filter((i) => boxOf(i) === b) })),
 ];
 
-/** A repeated digit. A full board with no repeats is solved. */
+/**
+ * Digits that collide: the same digit twice in a row, column or box. Every clashing
+ * cell is ringed and the message names the first clash. Nothing else: a digit that
+ * is wrong but clashes with nothing yet is left alone, just like on paper. (The hint
+ * is what compares with the answer.) A full board with no clashes is solved.
+ */
 export function check(_p: SudokuPuzzle, s: SudokuState): Problem | null {
   const g = s.values;
+  const clashing = conflicts(g);
+  if (!clashing.size) return null;
   for (const u of UNITS) {
     for (let d = 1; d <= N; d++) {
       const cells = u.cells.filter((i) => g[i] === d);
       if (cells.length > 1) {
-        return { kind: "rule", message: `This ${u.name} has ${cells.length === 2 ? "two" : cells.length} ${d}s. Each digit goes in a ${u.name} only once.`, cells };
+        return {
+          kind: "rule",
+          message: `This ${u.name} has ${cells.length === 2 ? "two" : cells.length} ${d}s. Each digit goes in a ${u.name} only once.`,
+          cells: [...clashing],
+        };
       }
     }
   }

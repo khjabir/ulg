@@ -57,8 +57,8 @@ export interface GameDef<P extends BasePuzzle = any, S = any, M = any> {
   check?(p: P, s: S): Problem | null;
   /**
    * How long the hint takes to recharge, in ms of game time, given how many hints
-   * this puzzle has used so far (0 = the wait before the first one). Defaults to
-   * defaultHintWait in the shell.
+   * this puzzle has used so far (0 = the wait before the first one). Defaults to a
+   * flat 10 s (HINT_WAIT_MS in the shell).
    */
   hintWait?(hintsUsed: number): number;
   Board: ComponentType<BoardProps<P, S, M>>;

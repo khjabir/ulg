@@ -37,11 +37,12 @@ import {
 type Status = { text: string; alert?: boolean } | null;
 
 /**
- * Hints recharge so they stay a last resort and not a shortcut: the first one is
- * ready after 20 s of play, the next after 30 s, then 45 s, 60 s… up to 90 s.
- * Only game time counts, so a paused or hidden game doesn't charge.
+ * The hint meter: after a fresh board and after each hint, the next one takes 10 s
+ * of play to charge, every time. Only game time counts, so a paused or hidden game
+ * doesn't charge. A game can set its own wait with GameDef.hintWait.
  */
-const defaultHintWait = (used: number) => (used === 0 ? 20_000 : Math.min(90_000, 15_000 + 15_000 * used));
+const HINT_WAIT_MS = 10_000;
+const defaultHintWait = () => HINT_WAIT_MS;
 type DialogKind = "help" | "stats" | "win" | null;
 
 interface Play<P, S> {
@@ -80,7 +81,7 @@ function useStopwatch(running: boolean) {
 
 export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P, S, M> }) {
   const levelIds = useMemo(() => def.levels.map((l) => l.id), [def]);
-  const hintWait = useCallback((used: number) => def.hintWait?.(used) ?? defaultHintWait(used), [def]);
+  const hintWait = useCallback((used: number) => def.hintWait?.(used) ?? defaultHintWait(), [def]);
   const [level, setLevel] = useState(def.levels[0].id);
   const [play, setPlay] = useState<Play<P, S> | null>(null);
   const [loading, setLoading] = useState(true);
