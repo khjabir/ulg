@@ -1,5 +1,5 @@
 import { mulberry32, range, shuffle, type Rng } from "../../core/rng";
-import type { BasePuzzle, HintResult } from "../../core/puzzle";
+import type { BasePuzzle, HintResult, Problem } from "../../core/puzzle";
 
 /**
  * Sixdoku (mini sudoku): 6×6, boxes of 2 rows × 3 columns, digits 1–6 once per row,
@@ -114,6 +114,46 @@ export function conflicts(values: number[]): Set<number> {
     for (const j of PEERS[i]) if (values[j] === values[i]) bad.add(i);
   }
   return bad;
+}
+
+/** Rows, columns and boxes, each a list of cells. */
+const UNITS: { name: "row" | "column" | "box"; cells: number[] }[] = [
+  ...range(N).map((r) => ({ name: "row" as const, cells: range(N).map((c) => r * N + c) })),
+  ...range(N).map((c) => ({ name: "column" as const, cells: range(N).map((r) => r * N + c) })),
+  ...range(N).map((b) => ({ name: "box" as const, cells: range(N * N).filter((i) => boxOf(i) === b) })),
+];
+
+/** A repeated digit, else a cell no digit fits, else a digit with nowhere to go. */
+export function check(_p: SudokuPuzzle, s: SudokuState): Problem | null {
+  const g = s.values;
+  for (const u of UNITS) {
+    for (let d = 1; d <= N; d++) {
+      const cells = u.cells.filter((i) => g[i] === d);
+      if (cells.length > 1) {
+        return { kind: "rule", message: `This ${u.name} has ${cells.length === 2 ? "two" : cells.length} ${d}s. Each digit goes in a ${u.name} only once.`, cells };
+      }
+    }
+  }
+  for (let i = 0; i < N * N; i++) {
+    if (g[i] || candidates(g, i).length) continue;
+    return {
+      kind: "stuck",
+      message: `No digit fits here: 1 to ${N} are all used in this cell's row, column or box. Change one of them.`,
+      cells: [i],
+    };
+  }
+  for (const u of UNITS) {
+    for (let d = 1; d <= N; d++) {
+      if (u.cells.some((i) => g[i] === d)) continue;
+      if (u.cells.some((i) => !g[i] && candidates(g, i).includes(d))) continue;
+      return {
+        kind: "stuck",
+        message: `There's nowhere left for a ${d} in this ${u.name}. Change a digit that blocks it.`,
+        cells: u.cells,
+      };
+    }
+  }
+  return null;
 }
 
 export function isSolved(_p: SudokuPuzzle, s: SudokuState): boolean {

@@ -149,6 +149,24 @@
   background: rgba(244, 197, 66, 0.4);
 }
 
+.p-flag {
+  position: absolute;
+  z-index: 2;
+  left: calc(var(--c) * 100% / var(--cols));
+  top: calc(var(--r) * 100% / var(--rows));
+  width: calc(100% / var(--cols));
+  height: calc(100% / var(--rows));
+  border-radius: 1.2cqi;
+  background: color-mix(in srgb, var(--n-red) 10%, transparent);
+  pointer-events: none;
+}
+
+.p-swatch.flagged {
+  z-index: 2;
+  border-radius: 2cqi;
+  outline-offset: 0;
+}
+
 .p-focus {
   display: block;
   position: absolute;

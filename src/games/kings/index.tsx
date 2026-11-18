@@ -1,6 +1,6 @@
 import type { GameDef } from "@/core/types";
 import { Crown, KingsIcon } from "@/core/Icons";
-import { hint, initialState, isSolved, KING, type KingsPuzzle, type KingsState } from "./engine";
+import { check, hint, initialState, isSolved, KING, type KingsPuzzle, type KingsState } from "./engine";
 import { Board, REGION_COLORS } from "./Board";
 
 function HowTo() {
@@ -54,6 +54,7 @@ export const kings: GameDef<KingsPuzzle, KingsState, number[]> = {
   progress: (p, s) => ({ done: s.filter((v) => v === KING).length, total: p.n }),
   pips: true,
   hint,
+  check,
   Board,
   HowTo,
   Icon: KingsIcon,

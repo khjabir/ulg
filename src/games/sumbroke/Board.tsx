@@ -30,7 +30,7 @@ function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 }
 
-export function Board({ puzzle, state: grid, apply, interactive, mark: hint, dealing, won }: Props) {
+export function Board({ puzzle, state: grid, apply, interactive, mark: hint, dealing, won, flagged }: Props) {
   const { rows, cols } = puzzle;
   const [popAt, setPopAt] = useState<{ cell: number; grid: Grid } | null>(null);
   const onMove = (m: Move) => {
@@ -252,6 +252,7 @@ export function Board({ puzzle, state: grid, apply, interactive, mark: hint, dea
           shake?.cell === i && "shake",
           hint?.from === i && "hint-from",
           hint?.to === i && "hint-to",
+          flagged.has(i) && "flagged",
           won && v !== 0 && "winner",
         ]
           .filter(Boolean)

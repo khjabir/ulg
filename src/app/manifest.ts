@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { GAME_IDS, GAME_META } from "@/games/meta";
 
 export const dynamic = "force-static";
 
@@ -9,7 +10,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: `${base}/`,
     name: "ulg: Unlimited Logic Games",
     short_name: "ulg",
-    description: "Sumbroke, Kings, Tangle, Zap, Sixdoku and Swatches: endless logic puzzles that play offline.",
+    description: `Endless logic puzzles that play offline: ${GAME_IDS.map((id) => GAME_META[id].name).join(", ")}.`,
     start_url: `${base}/`,
     scope: `${base}/`,
     display: "standalone",
@@ -22,13 +23,7 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: `${base}/icons/icon-512.png`, sizes: "512x512", type: "image/png", purpose: "any" },
       { src: `${base}/icons/maskable-512.png`, sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
-    shortcuts: [
-      { name: "Sumbroke", url: `${base}/sumbroke/` },
-      { name: "Kings", url: `${base}/kings/` },
-      { name: "Tangle", url: `${base}/tangle/` },
-      { name: "Zap", url: `${base}/zap/` },
-      { name: "Sixdoku", url: `${base}/sixdoku/` },
-      { name: "Swatches", url: `${base}/swatches/` },
-    ],
+    // Android shows up to four shortcuts on a long press of the app icon.
+    shortcuts: GAME_IDS.map((id) => ({ name: GAME_META[id].name, url: `${base}/${id}/` })),
   };
 }

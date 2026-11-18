@@ -1,5 +1,5 @@
 import { mulberry32 } from "../../core/rng";
-import type { BasePuzzle } from "../../core/puzzle";
+import type { BasePuzzle, Problem } from "../../core/puzzle";
 
 /**
  * Sumbroke engine: rules, puzzle generator and solver.
@@ -225,6 +225,110 @@ function hopeless(grid: Grid, rows: number, cols: number): boolean {
   }
   if (min !== Infinity && !minCellsCoverable(grid, min, rows, cols)) return true;
   return false;
+}
+
+/** Groups of tiles joined edge to edge, biggest first. */
+function groups(grid: Grid, rows: number, cols: number): number[][] {
+  const seen = new Uint8Array(grid.length);
+  const out: number[][] = [];
+  for (let i = 0; i < grid.length; i++) {
+    if (!grid[i] || seen[i]) continue;
+    const group: number[] = [];
+    const stack = [i];
+    seen[i] = 1;
+    while (stack.length) {
+      const a = stack.pop()!;
+      group.push(a);
+      for (const b of neighbors(a, rows, cols)) {
+        if (grid[b] && !seen[b]) {
+          seen[b] = 1;
+          stack.push(b);
+        }
+      }
+    }
+    out.push(group);
+  }
+  return out.sort((a, b) => b.length - a.length);
+}
+
+/**
+ * Why this board can't be finished, in words a player can act on, or null when it
+ * still might be. Uses the same cheap proofs as the solver, most obvious first; the
+ * full search stays in the hint.
+ */
+export function check(p: { rows: number; cols: number }, grid: Grid): Problem | null {
+  const { rows, cols } = p;
+  const tiles: number[] = [];
+  grid.forEach((v, i) => v && tiles.push(i));
+  const back = "Undo, or take a hint to go back.";
+  if (tiles.length <= 1) {
+    return tiles.length === 1 && grid[tiles[0]] < 0
+      ? { kind: "stuck", message: `Only a wildcard is left, and it needs a number to work on. ${back}`, cells: tiles }
+      : null;
+  }
+  if (legalMoves(grid, rows, cols).length === 0) {
+    return { kind: "stuck", message: `No moves left: no two neighbouring tiles can merge. ${back}`, cells: tiles };
+  }
+  const parts = groups(grid, rows, cols);
+  if (parts.length > 1) {
+    return {
+      kind: "stuck",
+      message: `The tiles have split into separate groups, and gaps never fill back in. ${back}`,
+      cells: parts.slice(1).flat(),
+    };
+  }
+  // A number whose neighbours are all bigger numbers can never change again, and a
+  // wildcard needs a number beside it.
+  const frozen = tiles.filter((i) => {
+    const v = grid[i];
+    return !neighbors(i, rows, cols).some((j) => {
+      const u = grid[j];
+      return u !== 0 && (v < 0 ? u > 0 : u < 0 || u <= v);
+    });
+  });
+  if (frozen.length) {
+    const one = frozen.length === 1;
+    const v = grid[frozen[0]];
+    const what = one ? (v < 0 ? `This ${cellLabel(v)} wildcard is` : `This ${v} is`) : "These tiles are";
+    const why = one && v < 0 ? "only other wildcards are next to it" : `every tile next to ${one ? "it" : "them"} is bigger`;
+    return { kind: "stuck", message: `${what} stuck for good: ${why}. ${back}`, cells: frozen };
+  }
+  let wilds = 0;
+  let sum = 0;
+  let min = Infinity;
+  for (const i of tiles) {
+    const v = grid[i];
+    if (v < 0) wilds++;
+    else {
+      sum += v;
+      min = Math.min(min, v);
+    }
+  }
+  if (wilds === tiles.length) {
+    return { kind: "stuck", message: `Only wildcards are left, and two wildcards can't merge. ${back}`, cells: tiles };
+  }
+  if (wilds === 0) {
+    const odd = tiles.filter((i) => sum % grid[i] !== 0 || !isPow2(sum / grid[i]));
+    if (odd.length) {
+      return {
+        kind: "stuck",
+        message: `With no wildcards left, only equal tiles merge, and these numbers can never pair up into one tile. ${back}`,
+        cells: tiles,
+      };
+    }
+  }
+  if (min !== Infinity && !minCellsCoverable(grid, min, rows, cols)) {
+    const mins = tiles.filter((i) => grid[i] === min);
+    return {
+      kind: "stuck",
+      message:
+        mins.length === 1
+          ? `Nothing can merge with this ${min} any more: it needs an equal tile or a wildcard beside it. ${back}`
+          : `The ${min}s can't all find a partner: each needs its own equal tile or wildcard beside it. ${back}`,
+      cells: mins,
+    };
+  }
+  return null;
 }
 
 /** Compact state key: one UTF-16 char per cell. */

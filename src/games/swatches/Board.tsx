@@ -9,9 +9,10 @@ import {
   area,
   clueIn,
   inRect,
+  mismatch,
+  rectCells,
   sameRect,
   swatchFits,
-  shapeOf,
   type SwatchesPuzzle,
   type SwatchesState,
   type Rect,
@@ -27,7 +28,6 @@ const rectOf = (a: number, b: number, cols: number): Rect => {
 const boxStyle = (r: Rect): CSSProperties =>
   ({ "--r0": r.r0, "--c0": r.c0, "--h": r.r1 - r.r0 + 1, "--w": r.c1 - r.c0 + 1, "--d": r.r0 + r.c0 }) as CSSProperties;
 
-const SHAPE_WORD = { square: "a square", wide: "a wide (wider than tall)", tall: "a tall (taller than wide)" } as const;
 
 export function ClueBadge({ size, shape, color }: { size: number | null; shape: string | null; color: number }) {
   return (
@@ -44,7 +44,7 @@ export function ClueBadge({ size, shape, color }: { size: number | null; shape: 
  */
 type Drag = { id: number; start: number; anchor: number; cursor: number; moved: boolean; editing: Rect | null };
 
-export function Board({ puzzle, state, apply, interactive, won, mark, dealing, say }: BoardProps<SwatchesPuzzle, SwatchesState, number[]>) {
+export function Board({ puzzle, state, apply, interactive, won, mark, dealing, say, flagged }: BoardProps<SwatchesPuzzle, SwatchesState, number[]>) {
   const { rows, cols, clues } = puzzle;
   const gridRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
@@ -58,15 +58,6 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
 
   const cellAt = (x: number, y: number) => (gridRef.current ? cellFromPoint(gridRef.current, x, y, rows, cols) : null);
   const swatchAt = (cell: number) => state.find((r) => inRect(r, Math.floor(cell / cols), cell % cols));
-
-  /** Explain why a swatch doesn't fit its clue, or null when it does. */
-  const mismatch = (rect: Rect, k: number): string | null => {
-    const clue = clues[k];
-    const n = area(rect);
-    if (clue.size !== null && clue.size !== n) return `This clue needs ${clue.size} cells, and the swatch has ${n}. Drag again to resize it.`;
-    if (clue.shape !== null && clue.shape !== shapeOf(rect)) return `This clue needs ${SHAPE_WORD[clue.shape]} swatch. Drag again to reshape it.`;
-    return null;
-  };
 
   const commit = (a: number, b: number, tapped: boolean, editing: Rect | null = null) => {
     const existing = editing ?? swatchAt(a);
@@ -89,9 +80,9 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
       return;
     }
     if (editing && sameRect(editing, rect)) return;
-    const problem = mismatch(rect, k);
-    apply(addSwatch(state, rect), { sound: problem ? "mark" : "place", step: area(rect) });
-    if (problem) say(problem);
+    // A swatch that breaks its clue still goes down (you may be mid-way through a
+    // reshape); the shell's check explains what's wrong and keeps it highlighted.
+    apply(addSwatch(state, rect), { sound: mismatch(puzzle, rect) ? "error" : "place", step: area(rect) });
   };
 
   const clearDrag = () => {
@@ -192,6 +183,11 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
   const preview = anchor !== null && cursor !== null ? rectOf(anchor, cursor, cols) : null;
   const previewClue = preview ? clueIn(puzzle, preview) : -1;
   const previewOk = preview !== null && previewClue >= 0 && swatchFits(puzzle, preview);
+  // A problem swatch gets one ring around it; any other flagged cell gets its own.
+  const flaggedSwatches = new Set(
+    flagged.size ? state.filter((r) => rectCells(r, cols).every((c) => flagged.has(c))) : [],
+  );
+  const loose = [...flagged].filter((c) => ![...flaggedSwatches].some((r) => inRect(r, Math.floor(c / cols), c % cols)));
 
   return (
     <div className={`tray p-tray ${dealing ? "deal" : ""}`} style={{ "--rows": rows, "--cols": cols } as CSSProperties}>
@@ -230,7 +226,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
           return (
             <div
               key={`${r.r0}-${r.c0}-${r.r1}-${r.c1}`}
-              className={`p-swatch ${swatchFits(puzzle, r) ? "" : "bad"} ${won ? "winner" : ""}`}
+              className={`p-swatch ${swatchFits(puzzle, r) ? "" : "bad"} ${flaggedSwatches.has(r) ? "flagged" : ""} ${won ? "winner" : ""}`}
               style={{ ...boxStyle(r), "--pc": color } as CSSProperties}
             />
           );
@@ -243,6 +239,14 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
             <span>{area(preview)}</span>
           </div>
         )}
+        {loose.map((c) => (
+          <span
+            key={`f${c}`}
+            className="p-flag flagged"
+            style={{ "--r": Math.floor(c / cols), "--c": c % cols } as CSSProperties}
+            aria-hidden
+          />
+        ))}
         {clues.map((cl, k) => (
           <span
             key={k}

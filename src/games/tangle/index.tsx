@@ -1,6 +1,6 @@
 import type { GameDef } from "@/core/types";
 import { Moon, Sun, TangleIcon } from "@/core/Icons";
-import { hint, initialState, isSolved, N, type TanglePuzzle, type TangleState } from "./engine";
+import { check, hint, initialState, isSolved, N, type TanglePuzzle, type TangleState } from "./engine";
 import { Board } from "./Board";
 
 const S = () => <Sun className="t-piece" />;
@@ -69,6 +69,7 @@ export const tangle: GameDef<TanglePuzzle, TangleState, number[]> = {
   isSolved,
   progress: (_p, s) => ({ done: s.filter(Boolean).length, total: N * N }),
   hint,
+  check,
   Board,
   HowTo,
   Icon: TangleIcon,

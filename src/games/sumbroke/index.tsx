@@ -1,7 +1,7 @@
 import type { GameDef } from "@/core/types";
 import { SumbrokeIcon } from "@/core/Icons";
 import { requestWorkerHint } from "@/core/workerClient";
-import { isSolved, pieceCount, type Grid, type Hint, type Move, type SumbrokePuzzle } from "./engine";
+import { check, isSolved, pieceCount, type Grid, type Hint, type Move, type SumbrokePuzzle } from "./engine";
 import { Board } from "./Board";
 import { HowTo } from "./HowTo";
 import { Tile } from "./Tile";
@@ -18,6 +18,7 @@ export const sumbroke: GameDef<SumbrokePuzzle, Grid, Move> = {
   theme: { felt: "#1f5f5b", feltDeep: "#174a47" },
   initialState: (p) => p.grid,
   isSolved: (_p, g) => isSolved(g),
+  check,
   progress: (p, g) => ({ done: p.rows * p.cols - pieceCount(g), total: p.rows * p.cols - 1 }),
   pips: true,
   async hint(p, history) {

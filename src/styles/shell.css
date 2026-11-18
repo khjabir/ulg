@@ -195,6 +195,25 @@
   }
 }
 
+/* Cells a problem points at (GameDef.check): a red ring that breathes. */
+.flagged {
+  outline: 0.9cqi solid var(--n-red);
+  outline-offset: -0.9cqi;
+  animation: flagged 1.5s ease-in-out infinite;
+}
+
+@keyframes flagged {
+  50% {
+    outline-color: color-mix(in srgb, var(--n-red) 50%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flagged {
+    animation: none;
+  }
+}
+
 /* ---------------- Below the board ---------------- */
 
 .pips {

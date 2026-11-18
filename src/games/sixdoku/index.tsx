@@ -1,6 +1,6 @@
 import type { GameDef } from "@/core/types";
 import { SudokuIcon } from "@/core/Icons";
-import { hint, initialState, isSolved, N, type SudokuPuzzle, type SudokuState } from "./engine";
+import { check, hint, initialState, isSolved, N, type SudokuPuzzle, type SudokuState } from "./engine";
 import { Board } from "./Board";
 
 function HowTo() {
@@ -44,6 +44,7 @@ export const sixdoku: GameDef<SudokuPuzzle, SudokuState, number[]> = {
   isSolved,
   progress: (_p, s) => ({ done: s.values.filter(Boolean).length, total: N * N }),
   hint,
+  check,
   Board,
   HowTo,
   Icon: SudokuIcon,

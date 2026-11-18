@@ -1,6 +1,6 @@
 import type { GameDef } from "@/core/types";
 import { ZapIcon } from "@/core/Icons";
-import { hint, initialState, isSolved, type ZapPuzzle, type ZapState } from "./engine";
+import { check, hint, initialState, isSolved, type ZapPuzzle, type ZapState } from "./engine";
 import { Board } from "./Board";
 
 function HowTo() {
@@ -48,6 +48,7 @@ export const zap: GameDef<ZapPuzzle, ZapState, number[]> = {
   isSolved,
   progress: (p, s) => ({ done: s.length, total: p.rows * p.cols }),
   hint,
+  check,
   Board,
   HowTo,
   Icon: ZapIcon,

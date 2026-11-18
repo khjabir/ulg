@@ -93,6 +93,9 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
   const recorded = useRef<string | null>(null);
   const playRef = useRef(play);
   playRef.current = play;
+  // Problem announcements: only after the player's own move, once per new problem.
+  const movedRef = useRef<{ sound: string; state: S } | null>(null);
+  const lastProblem = useRef("");
 
   const running = !!play && play.status === "playing" && !loading && dialog === null && visible;
   const stopwatch = useStopwatch(running);
@@ -251,6 +254,7 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
     (next: S, fx?: MoveFx) => {
       const name = fx?.sound ?? "place";
       if (name !== "none") (sfx[name] as (n?: number) => void)(fx?.step);
+      movedRef.current = { sound: name, state: next };
       setPlay((p) => {
         if (!p || p.status !== "playing") return p;
         return { ...p, history: [...p.history, next], status: def.isSolved(p.puzzle, next) ? "won" : "playing" };
@@ -337,24 +341,63 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
     }
   };
 
-  const say = useCallback((text: string, alert?: boolean) => {
-    setStatus({ text, alert });
-    if (alert) {
-      sfx.error();
-      setShake(false);
-      requestAnimationFrame(() => setShake(true));
-      window.setTimeout(() => setShake(false), 420);
-    }
+  const shakeBoard = useCallback(() => {
+    setShake(false);
+    requestAnimationFrame(() => setShake(true));
+    window.setTimeout(() => setShake(false), 420);
   }, []);
+
+  const say = useCallback(
+    (text: string, alert?: boolean) => {
+      setStatus({ text, alert });
+      if (alert) {
+        sfx.error();
+        shakeBoard();
+      }
+    },
+    [shakeBoard],
+  );
 
   /* ---------------- render ---------------- */
 
   const won = play?.status === "won";
   const progress = play && state !== null ? def.progress(play.puzzle, state) : { done: 0, total: 1 };
   const atStart = !play || play.history.length <= 1;
-  // A full board that isn't solved is the classic "stuck" moment: say what to do.
-  const fullButWrong = !!play && !won && !loading && progress.done >= progress.total;
-  const shown: Status = status ?? (fullButWrong ? { text: "The board is full, but something's off. Fix the pieces marked in red, undo, or take a hint.", alert: true } : null);
+
+  // Broken rules and dead ends, as the game sees them after every move.
+  const puzzle = play?.puzzle ?? null;
+  const problem = useMemo(
+    () => (puzzle && state !== null && !won && !loading && def.check ? def.check(puzzle, state) : null),
+    [def, puzzle, state, won, loading],
+  );
+  const flagged = useMemo(() => new Set(problem?.cells ?? []), [problem]);
+
+  // Announce a problem once, right after the move that caused it: a buzz (unless the
+  // move already sounded wrong), plus a shake when the board can't be finished.
+  useEffect(() => {
+    const key = problem ? `${problem.kind}|${problem.message}|${problem.cells.join(",")}` : "";
+    const before = lastProblem.current;
+    lastProblem.current = key;
+    const moved = movedRef.current;
+    movedRef.current = null;
+    if (!problem || !moved || moved.state !== state || key === before) return;
+    const t = window.setTimeout(() => {
+      if (moved.sound !== "error") sfx.error();
+      if (problem.kind === "stuck") shakeBoard();
+    }, 240);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [problem, shakeBoard]);
+
+  // Without a check (or when it finds nothing), a full but unsolved board still gets a word.
+  const fullButWrong = !problem && !!play && !won && !loading && progress.done >= progress.total;
+  const shown: Status =
+    status ??
+    (problem
+      ? { text: problem.message, alert: true }
+      : fullButWrong
+        ? { text: "The board is full, but something's off. Undo a few moves, or take a hint.", alert: true }
+        : null);
   const levelInfo = def.levels.find((l) => l.id === level) ?? def.levels[0];
   const Board = def.Board;
   const HowTo = def.HowTo;
@@ -430,6 +473,7 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
             mark={mark}
             dealing={dealing}
             say={say}
+            flagged={flagged}
           />
         )}
       </div>

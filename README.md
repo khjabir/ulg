@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.png" alt="ulg: Unlimited Logic Games. Six puzzles you can't run out of, playable offline." width="100%">
+  <img src="docs/banner.png" alt="ulg: Unlimited Logic Games. Logic puzzles you can't run out of, playable offline." width="100%">
 </p>
 
 <p align="center">
@@ -10,16 +10,19 @@
   <img alt="No backend" src="https://img.shields.io/badge/backend-none-7a5a1e">
 </p>
 
-**ulg** is a pocket collection of six logic puzzles that never runs out. Every board is
+**ulg** is a growing collection of logic puzzles that never runs out. Every board is
 generated on your device and has exactly one solution, and most take between one and
 five minutes. Add it to your home screen and it plays like an app, with or without a
 connection.
+
+Each game is a self-contained module, so the shelf keeps growing:
+[adding another](#add-your-own-game) doesn't touch the rest.
 
 <p align="center">
   <img src="docs/demo.gif" alt="Drawing a Zap path, cutting the grid into Swatches and merging Sumbroke tiles, each ending in confetti" width="280">
 </p>
 
-## The games
+## The games so far
 
 <table>
   <tr>
@@ -58,7 +61,7 @@ connection.
   </tr>
 </table>
 
-Each game has an **Easy**, **Medium** and **Hard** level:
+Every game sets its own levels. Today's games each have three:
 
 | Game | Easy | Medium | Hard |
 | --- | --- | --- | --- |
@@ -72,6 +75,7 @@ Each game has an **Easy**, **Medium** and **Hard** level:
 ## Why it's fun to play
 
 - **It never runs out.** Tap *New puzzle* and a fresh board appears. A generator built for each game guarantees there's exactly one solution, so you never have to guess.
+- **It tells you when you're stuck.** Break a rule or paint yourself into a corner, and the game says what went wrong and rings the cells involved. That covers a Zap path that has cut cells off, a Sumbroke tile that can never merge again, a Kings row with no room left, and more. It speaks up the moment it happens, not after you've filled the board.
 - **Hints actually help.** A hint clears anything that can't be right and shows the next step. In Sumbroke and Zap, it takes you back to your last good position first.
 - **It feels like a game table.** You get chunky tiles you drag around, wooden clacks, chimes as a path grows, a soft buzz on phones, and a wave of confetti when you solve it.
 - **Drawing is forgiving.** Zap's line follows your finger smoothly. Drags that overshoot the board's edge still land on the edge row. You can grab a swatch and drag its end back and forth to resize it.
@@ -80,7 +84,14 @@ Each game has an **Easy**, **Medium** and **Hard** level:
 - **It works anywhere.** It installs as an app and plays offline. It supports dark mode and full keyboard play, and it respects reduced motion.
 
 <p align="center">
-  <img src="docs/screens/hub.png" width="230" alt="The home screen listing all six games">
+  <img src="docs/screens/stuck-zap.png" width="260" alt="Zap pointing out two cells the path has cut off">
+  &nbsp;
+  <img src="docs/screens/stuck-sumbroke.png" width="260" alt="Sumbroke pointing out a 4 that can never merge again">
+</p>
+<p align="center"><sub>Stuck? The game says why, the moment it happens</sub></p>
+
+<p align="center">
+  <img src="docs/screens/hub.png" width="230" alt="The home screen listing every game">
   &nbsp;
   <img src="docs/screens/celebration.png" width="230" alt="A solved Sumbroke board with confetti">
   &nbsp;
@@ -127,7 +138,7 @@ From then on it plays offline.
 ## How the puzzles are made
 
 <details>
-<summary><b>Every board has exactly one solution. Here's how each generator gets there.</b></summary>
+<summary><b>Every board has exactly one solution. Here's how each generator gets there, and how the games spot trouble.</b></summary>
 
 <br>
 
@@ -145,6 +156,11 @@ Generation runs in a Web Worker, so the screen never freezes. The puzzle tests g
 hundreds of boards and check that each one is deterministic, has exactly one valid solution,
 and can be solved using hints alone.
 
+After every move, each game also runs a quick `check` for broken rules and dead ends. A
+check only reports what can be proved from the board itself, never peeking at the answer.
+The tests walk every solution step by step to make sure the check stays quiet, then play
+thousands of random games to make sure every board it flags really can't be finished.
+
 </details>
 
 ## Under the hood
@@ -160,7 +176,7 @@ src/
   app/                 one folder per game route, home page, not-found page, manifest
   core/                game shell (timer, undo, hints, stats, saving), hub, sounds,
                        confetti, pointer-to-cell geometry, worker client
-  games/<game>/        engine.ts (generator, rules, hints), Board.tsx, index.tsx (rules text)
+  games/<game>/        engine.ts (generator, rules, hint, check), Board.tsx, index.tsx (rules text)
   games/registry.ts    the list of games on the home screen
   styles/              shared styles plus one stylesheet per game
   worker/              the Web Worker that builds puzzles
@@ -180,12 +196,41 @@ docs/                  README images (banner.html is the banner's source)
 
 ## Add your own game
 
-Every game is a `GameDef`: its rules text, a board component, a generator and a hint.
+ulg is built to grow. The shell provides the home-screen card, app shortcut, offline
+cache, levels, timer, undo, hints, saving, stats, sounds, confetti and problem messages.
+A new game brings only its own rules and board.
 
-1. Copy a game folder in `src/games/`. Write the generator and rules in `engine.ts` and the board in `Board.tsx`.
-2. Register the game in `src/games/registry.ts`, `src/games/engines.ts` and `src/games/meta.ts`.
-3. Add a route at `src/app/<id>/page.tsx` (copy one of the four-line pages) and import its stylesheet in `src/app/layout.tsx`.
-4. Run `npm test`.
+Every game is a `GameDef`:
+
+```ts
+export const mygame: GameDef<MyPuzzle, MyState, number[]> = {
+  id: "mygame",
+  name: "My Game",
+  blurb: "One line for the home screen.",
+  levels: [{ id: "easy", label: "Easy", detail: "5×5" } /* , … */],
+  theme: { felt: "#1f5f5b", feltDeep: "#174a47" },
+  initialState, // the board before the first move
+  isSolved,     // has the player won?
+  progress,     // how much is done, for the progress bar
+  hint,         // the next step, or a way back to the last good position
+  check,        // optional: a broken rule or a dead end to point out, or null
+  Board,        // draws the board; calls apply(next) for every move
+  HowTo,        // the rules, shown before the first game
+  Icon,         // the home-screen picture
+};
+```
+
+1. **Write the game** in `src/games/<id>/`. Copying the closest existing game is the
+   quickest start.
+   - `engine.ts`: a `generate(level, seed)` that always yields exactly one solution, plus the rules, `hint` and `check`.
+   - `Board.tsx`: give the cells listed in the `flagged` prop the `flagged` class, so problems are ringed in red.
+   - `index.tsx`: the `GameDef` above.
+2. **Register it.** Add its id to `GameId` in `src/core/puzzle.ts`, its generator to
+   `src/games/engines.ts`, its definition to `src/games/registry.ts`, and its name and
+   blurb to `src/games/meta.ts`.
+3. **Give it a page.** Add `src/app/<id>/page.tsx` (copy any of the four-line pages), and
+   import the game's stylesheet in `src/app/layout.tsx`.
+4. **Test it.** Add a case to `scripts/test-engines.ts` and run `npm test`.
 
 To rename a game, change `name` in its `index.tsx` and in `meta.ts`. Old addresses listed
 in `LEGACY_IDS` forward to the new ones, and saved progress moves across automatically.

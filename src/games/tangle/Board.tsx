@@ -6,7 +6,7 @@ import { Moon, Sun } from "@/core/Icons";
 import { sfx } from "@/core/sound";
 import { errors, MOON, N, SUN, type TanglePuzzle, type TangleState } from "./engine";
 
-export function Board({ puzzle, state, apply, interactive, won, mark, dealing, say }: BoardProps<TanglePuzzle, TangleState, number[]>) {
+export function Board({ puzzle, state, apply, interactive, won, mark, dealing, say, flagged }: BoardProps<TanglePuzzle, TangleState, number[]>) {
   const [focus, setFocus] = useState(() => Math.max(0, puzzle.givens.findIndex((v) => !v)));
   const [nudge, setNudge] = useState<{ cell: number; k: number } | null>(null);
   const cellRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -66,7 +66,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
               }}
               type="button"
               key={nudge?.cell === i ? `${i}-${nudge.k}` : i}
-              className={["t-cell", "fx-cell", given && "given", err.cells.has(i) && "bad", marked.has(i) && "hinted", won && "winner", nudge?.cell === i && "nudge"]
+              className={["t-cell", "fx-cell", given && "given", err.cells.has(i) && "bad", marked.has(i) && "hinted", flagged.has(i) && "flagged", won && "winner", nudge?.cell === i && "nudge"]
                 .filter(Boolean)
                 .join(" ")}
               tabIndex={i === focus ? 0 : -1}

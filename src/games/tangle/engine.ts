@@ -1,5 +1,5 @@
 import { mulberry32, range, shuffle, type Rng } from "../../core/rng";
-import type { BasePuzzle, HintResult } from "../../core/puzzle";
+import type { BasePuzzle, HintResult, Problem } from "../../core/puzzle";
 
 /**
  * Tangle: fill a 6×6 grid with suns (1) and moons (2).
@@ -193,6 +193,64 @@ export function errors(p: TanglePuzzle, s: TangleState): TangleErrors {
     if (s[sg.a] && s[sg.b] && (s[sg.a] === s[sg.b]) !== sg.same) signs.add(k);
   });
   return { cells, signs };
+}
+
+const pieceName = (v: number, many = false) => (v === SUN ? (many ? "suns" : "sun") : many ? "moons" : "moon");
+
+/** The first broken rule, said plainly, else an empty cell where neither piece fits. */
+export function check(p: TanglePuzzle, s: TangleState): Problem | null {
+  for (let r = 0; r < N; r++) {
+    for (let c = 0; c < N; c++) {
+      const i = r * N + c;
+      const v = s[i];
+      if (!v) continue;
+      const across = c <= N - 3 && s[i + 1] === v && s[i + 2] === v;
+      const down = r <= N - 3 && s[i + N] === v && s[i + 2 * N] === v;
+      if (across || down) {
+        return {
+          kind: "rule",
+          message: `Three ${pieceName(v, true)} in a row. At most two can sit side by side.`,
+          cells: across ? [i, i + 1, i + 2] : [i, i + N, i + 2 * N],
+        };
+      }
+    }
+  }
+  for (let k = 0; k < N; k++) {
+    for (const v of [SUN, MOON]) {
+      const row = range(N).map((c) => k * N + c).filter((i) => s[i] === v);
+      const col = range(N).map((r) => r * N + k).filter((i) => s[i] === v);
+      for (const [line, cells] of [["row", row], ["column", col]] as const) {
+        if (cells.length > N / 2) {
+          return {
+            kind: "rule",
+            message: `This ${line} has ${cells.length} ${pieceName(v, true)}. Each ${line} needs exactly ${N / 2} of each.`,
+            cells: [...cells],
+          };
+        }
+      }
+    }
+  }
+  for (const sg of p.signs) {
+    const a = s[sg.a];
+    const b = s[sg.b];
+    if (a && b && (a === b) !== sg.same) {
+      return {
+        kind: "rule",
+        message: sg.same ? "These two are joined by =, so they must match." : "These two are joined by ×, so they must be opposite.",
+        cells: [sg.a, sg.b],
+      };
+    }
+  }
+  const at = signIndex(p.signs);
+  for (let i = 0; i < N * N; i++) {
+    if (s[i] || !(breaks(s, i, SUN, at) && breaks(s, i, MOON, at))) continue;
+    return {
+      kind: "stuck",
+      message: "Neither a sun nor a moon can go here without breaking a rule. Something nearby has to change.",
+      cells: [i],
+    };
+  }
+  return null;
 }
 
 export function isSolved(p: TanglePuzzle, s: TangleState): boolean {

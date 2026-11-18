@@ -25,7 +25,7 @@ const EDGE = "#26211c";
 
 type Drag = { start: number; id: number; mode: "mark" | "erase" | "none"; moved: boolean; last: number; draft: KingsState | null };
 
-export function Board({ puzzle, state, apply, interactive, won, mark, dealing }: BoardProps<KingsPuzzle, KingsState, number[]>) {
+export function Board({ puzzle, state, apply, interactive, won, mark, dealing, flagged }: BoardProps<KingsPuzzle, KingsState, number[]>) {
   const { n, regions } = puzzle;
   const gridRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
@@ -170,7 +170,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing }:
               }}
               type="button"
               data-cell={i}
-              className={["q-cell", "fx-cell", bad.has(i) && "bad", marked.has(i) && "hinted", won && v === KING && "winner"]
+              className={["q-cell", "fx-cell", bad.has(i) && "bad", marked.has(i) && "hinted", flagged.has(i) && "flagged", won && v === KING && "winner"]
                 .filter(Boolean)
                 .join(" ")}
               style={

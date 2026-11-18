@@ -11,7 +11,7 @@ const CROSS = 0.62;
 
 type Point = { x: number; y: number }; // position in cell units, (0,0) = grid's top-left corner
 
-export function Board({ puzzle, state, apply, interactive, won, mark, dealing, say }: BoardProps<ZapPuzzle, ZapState, number[]>) {
+export function Board({ puzzle, state, apply, interactive, won, mark, dealing, say, flagged }: BoardProps<ZapPuzzle, ZapState, number[]>) {
   const { rows, cols, numbers } = puzzle;
   const n = rows * cols;
   const K = lastNumber(puzzle);
@@ -281,7 +281,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
           <div
             key={i}
             data-cell={i}
-            className={["z-cell", "fx-cell", onPath.has(i) && "on", marked.has(i) && "hinted"].filter(Boolean).join(" ")}
+            className={["z-cell", "fx-cell", onPath.has(i) && "on", marked.has(i) && "hinted", flagged.has(i) && "flagged"].filter(Boolean).join(" ")}
             style={{ boxShadow: edges[i] || undefined, "--d": Math.floor(i / cols) + (i % cols) } as CSSProperties}
           />
         ))}

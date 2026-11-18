@@ -189,6 +189,24 @@
   80% { transform: translateX(3%); }
 }
 
+/* problem: the tile covers its cell, so the red ring goes on the tile */
+.sb-cell.flagged {
+  outline: none;
+  animation: none;
+}
+
+.sb-cell.flagged .sb-tile {
+  outline: 1.2cqi solid var(--n-red);
+  outline-offset: 0.3cqi;
+  animation: flagged 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-cell.flagged .sb-tile {
+    animation: none;
+  }
+}
+
 /* hint */
 .sb-cell.hint-from .sb-tile {
   animation: hint-pulse 1.1s ease-in-out infinite;

@@ -1,5 +1,5 @@
 import { mulberry32, shuffle, range, type Rng } from "../../core/rng";
-import type { BasePuzzle, HintResult } from "../../core/puzzle";
+import type { BasePuzzle, HintResult, Problem } from "../../core/puzzle";
 
 /**
  * Swatches: split the grid into rectangles. Each swatch holds exactly one clue.
@@ -238,6 +238,58 @@ const overlaps = (a: Rect, b: Rect) => !(a.r1 < b.r0 || b.r1 < a.r0 || a.c1 < b.
 /** Add a swatch, replacing any it overlaps. */
 export function addSwatch(s: SwatchesState, rect: Rect): SwatchesState {
   return s.filter((r) => !overlaps(r, rect)).concat([rect]);
+}
+
+export const SHAPE_WORD = { square: "a square", wide: "a wide (wider than tall)", tall: "a tall (taller than wide)" } as const;
+
+/** Why a drawn swatch breaks the rules, or null when it fits its clue. */
+export function mismatch(p: SwatchesPuzzle, rect: Rect): string | null {
+  const k = clueIn(p, rect);
+  if (k === -1) return "This swatch has no clue in it. Every swatch needs exactly one.";
+  if (k === -2) return "This swatch holds more than one clue. Every swatch needs exactly one.";
+  const clue = p.clues[k];
+  const n = area(rect);
+  if (clue.size !== null && clue.size !== n) return `This clue needs ${clue.size} cells, and the swatch has ${n}. Drag its edge to resize it.`;
+  if (clue.shape !== null && clue.shape !== shapeOf(rect)) return `This clue needs ${SHAPE_WORD[clue.shape]} swatch. Drag its edge to reshape it.`;
+  return null;
+}
+
+/**
+ * A swatch that breaks its clue, else a clue with no room left for any swatch, else
+ * empty cells that no remaining clue could ever cover.
+ */
+export function check(p: SwatchesPuzzle, s: SwatchesState): Problem | null {
+  const { rows, cols, clues } = p;
+  for (const r of s) {
+    const why = mismatch(p, r);
+    if (why) return { kind: "rule", message: why, cells: rectCells(r, cols) };
+  }
+  const covered = new Uint8Array(rows * cols);
+  for (const r of s) for (const c of rectCells(r, cols)) covered[c] = 1;
+  const reach = new Uint8Array(rows * cols);
+  for (let k = 0; k < clues.length; k++) {
+    if (covered[clues[k].cell]) continue;
+    const room = candidatesFor(p, k).filter((r) => rectCells(r, cols).every((c) => !covered[c]));
+    if (!room.length) {
+      return {
+        kind: "stuck",
+        message: "There's no room left for this clue's swatch. Move or shrink a swatch next to it.",
+        cells: [clues[k].cell],
+      };
+    }
+    for (const r of room) for (const c of rectCells(r, cols)) reach[c] = 1;
+  }
+  const orphans: number[] = [];
+  for (let i = 0; i < rows * cols; i++) if (!covered[i] && !reach[i]) orphans.push(i);
+  if (orphans.length) {
+    const one = orphans.length === 1;
+    return {
+      kind: "stuck",
+      message: `No swatch can reach ${one ? "this cell" : "these cells"} any more, so ${one ? "it" : "they"} can't be covered. Move a swatch to make room.`,
+      cells: orphans,
+    };
+  }
+  return null;
 }
 
 export function isSolved(p: SwatchesPuzzle, s: SwatchesState): boolean {

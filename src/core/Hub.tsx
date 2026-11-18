@@ -46,7 +46,7 @@ export function Hub() {
             {sound ? <SoundOnIcon /> : <SoundOffIcon />}
           </button>
         </div>
-        <p className="hub-lede">Unlimited logic games: six puzzle types, a fresh board whenever you want one.</p>
+        <p className="hub-lede">Unlimited logic games. Every board is new, and every one has exactly one answer.</p>
       </header>
 
       <ul className="hub-list">

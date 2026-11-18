@@ -1,8 +1,8 @@
 import type { ComponentType } from "react";
-import type { BasePuzzle, GameId, HintResult } from "./puzzle";
+import type { BasePuzzle, GameId, HintResult, Problem } from "./puzzle";
 import type { SoundName } from "./sound";
 
-export type { BasePuzzle, GameId, HintResult };
+export type { BasePuzzle, GameId, HintResult, Problem };
 
 /** How a move should sound: a sound name (default "place"), "none", and a pitch step. */
 export interface MoveFx {
@@ -29,6 +29,8 @@ export interface BoardProps<P, S, M> {
   dealing: boolean;
   /** Show a short message under the board. */
   say: (text: string, alert?: boolean) => void;
+  /** Cells the current problem points at (see GameDef.check). Give them the `flagged` class. */
+  flagged: ReadonlySet<number>;
 }
 
 export interface GameDef<P extends BasePuzzle = any, S = any, M = any> {
@@ -44,6 +46,13 @@ export interface GameDef<P extends BasePuzzle = any, S = any, M = any> {
   /** Show progress as one pip per step (small totals) instead of a bar. */
   pips?: boolean;
   hint(p: P, history: S[]): HintResult<S, M> | Promise<HintResult<S, M>>;
+  /**
+   * Look for a broken rule or a dead end after every move. Return null when all is
+   * well. Keep it fast and never use the solution: only report what the player could
+   * work out from the board. The shell shows the message, buzzes once when a new
+   * problem appears, shakes the board when stuck, and passes `cells` to the board.
+   */
+  check?(p: P, s: S): Problem | null;
   Board: ComponentType<BoardProps<P, S, M>>;
   HowTo: ComponentType;
   Icon: ComponentType;

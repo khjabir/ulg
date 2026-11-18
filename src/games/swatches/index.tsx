@@ -1,6 +1,6 @@
 import type { GameDef } from "@/core/types";
 import { SwatchesIcon } from "@/core/Icons";
-import { area, hint, initialState, isSolved, type SwatchesPuzzle, type SwatchesState } from "./engine";
+import { area, check, hint, initialState, isSolved, type SwatchesPuzzle, type SwatchesState } from "./engine";
 import { Board, ClueBadge } from "./Board";
 
 function HowTo() {
@@ -54,6 +54,7 @@ export const swatches: GameDef<SwatchesPuzzle, SwatchesState, number[]> = {
   isSolved,
   progress: (p, s) => ({ done: s.reduce((n, r) => n + area(r), 0), total: p.rows * p.cols }),
   hint,
+  check,
   Board,
   HowTo,
   Icon: SwatchesIcon,

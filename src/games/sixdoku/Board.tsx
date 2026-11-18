@@ -8,7 +8,7 @@ import { boxOf, BOX_C, BOX_R, conflicts, N, placeDigit, type SudokuPuzzle, type 
 
 const EDGE = "#2c2f35";
 
-export function Board({ puzzle, state, apply, interactive, won, mark, dealing, say }: BoardProps<SudokuPuzzle, SudokuState, number[]>) {
+export function Board({ puzzle, state, apply, interactive, won, mark, dealing, say, flagged }: BoardProps<SudokuPuzzle, SudokuState, number[]>) {
   const [sel, setSel] = useState(() => Math.max(0, puzzle.givens.findIndex((v) => !v)));
   const [notesMode, setNotesMode] = useState(false);
   const cellRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -110,6 +110,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
               bad.has(i) && !given && "bad",
               bad.has(i) && given && "bad-given",
               marked.has(i) && "hinted",
+              flagged.has(i) && "flagged",
               won && "winner",
             ]
               .filter(Boolean)

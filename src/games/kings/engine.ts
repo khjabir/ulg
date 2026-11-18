@@ -1,5 +1,5 @@
 import { mulberry32, range, shuffle, neighbours4, type Rng } from "../../core/rng";
-import type { BasePuzzle, HintResult } from "../../core/puzzle";
+import type { BasePuzzle, HintResult, Problem } from "../../core/puzzle";
 
 /**
  * Kings: one king per row, column and coloured region; kings never touch,
@@ -181,6 +181,57 @@ export function conflicts(p: KingsPuzzle, s: KingsState): Set<number> {
     }
   }
   return bad;
+}
+
+/**
+ * The first broken rule (two kings in one line or colour, or touching), else a row,
+ * column or colour that still needs a king but has no cell left for one.
+ */
+export function check(p: KingsPuzzle, s: KingsState): Problem | null {
+  const { n, regions } = p;
+  const row = (i: number) => Math.floor(i / n);
+  const col = (i: number) => i % n;
+  const kings: number[] = [];
+  s.forEach((v, i) => v === KING && kings.push(i));
+
+  for (let a = 0; a < kings.length; a++) {
+    for (let b = a + 1; b < kings.length; b++) {
+      const i = kings[a];
+      const j = kings[b];
+      const cells = [i, j];
+      if (row(i) === row(j)) return { kind: "rule", message: "Two kings share a row. Each row gets exactly one.", cells };
+      if (col(i) === col(j)) return { kind: "rule", message: "Two kings share a column. Each column gets exactly one.", cells };
+      if (regions[i] === regions[j]) return { kind: "rule", message: "Two kings share a colour. Each colour gets exactly one.", cells };
+      if (Math.abs(row(i) - row(j)) <= 1 && Math.abs(col(i) - col(j)) <= 1)
+        return { kind: "rule", message: "These kings touch. Kings can't sit next to each other, not even diagonally.", cells };
+    }
+  }
+
+  const blocked = (i: number) =>
+    s[i] === MARK ||
+    kings.some(
+      (k) =>
+        row(k) === row(i) ||
+        col(k) === col(i) ||
+        regions[k] === regions[i] ||
+        (Math.abs(row(k) - row(i)) <= 1 && Math.abs(col(k) - col(i)) <= 1),
+    );
+  const units: { name: string; cells: number[] }[] = [];
+  for (let r = 0; r < n; r++) units.push({ name: "row", cells: range(n).map((c) => r * n + c) });
+  for (let c = 0; c < n; c++) units.push({ name: "column", cells: range(n).map((r) => r * n + c) });
+  const byRegion = new Map<number, number[]>();
+  regions.forEach((g, i) => byRegion.set(g, [...(byRegion.get(g) ?? []), i]));
+  for (const cells of byRegion.values()) units.push({ name: "colour", cells });
+
+  for (const u of units) {
+    if (u.cells.some((i) => s[i] === KING)) continue;
+    if (!u.cells.every(blocked)) continue;
+    const message = u.cells.every((i) => s[i] === MARK)
+      ? `Every cell in this ${u.name} is crossed out, but it still needs a king. Clear an X.`
+      : `There's no room left for a king in this ${u.name}. Move a king or clear an X.`;
+    return { kind: "stuck", message, cells: u.cells };
+  }
+  return null;
 }
 
 export function isSolved(p: KingsPuzzle, s: KingsState): boolean {
