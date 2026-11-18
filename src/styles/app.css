@@ -335,6 +335,94 @@ html.no-splash #splash,
   background: transparent;
 }
 
+/* ---------------- Settings (gear menu in each game) ---------------- */
+
+.switches {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.switches li + li {
+  border-top: 1px solid var(--line);
+}
+
+.switches label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  cursor: pointer;
+}
+
+.switches label > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.switches b {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.switches small {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+
+/* A plain checkbox drawn as a switch. */
+.switches input {
+  appearance: none;
+  flex: none;
+  position: relative;
+  width: 46px;
+  height: 28px;
+  margin: 0;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--ink) 22%, transparent);
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.switches input::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.switches input:checked {
+  background: var(--felt, #2d8a5f);
+}
+
+.switches input:checked::after {
+  transform: translateX(18px);
+}
+
+.switches input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.settings .btn.primary {
+  margin-top: 8px;
+}
+
+.timer.hidden {
+  visibility: hidden;
+}
+
 /* ---------------- App menu ---------------- */
 
 .app-menu section {

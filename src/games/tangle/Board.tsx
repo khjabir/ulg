@@ -6,11 +6,16 @@ import { Moon, Sun } from "@/core/Icons";
 import { sfx } from "@/core/sound";
 import { errors, MOON, N, SUN, type TanglePuzzle, type TangleState } from "./engine";
 
-export function Board({ puzzle, state, apply, interactive, won, mark, dealing, say, flagged }: BoardProps<TanglePuzzle, TangleState, number[]>) {
+export function Board({ puzzle, state, apply, interactive, won, mark, dealing, say, flagged, settings }: BoardProps<TanglePuzzle, TangleState, number[]>) {
   const [focus, setFocus] = useState(() => Math.max(0, puzzle.givens.findIndex((v) => !v)));
   const [nudge, setNudge] = useState<{ cell: number; k: number } | null>(null);
   const cellRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const err = useMemo(() => errors(puzzle, state), [puzzle, state]);
+  // Auto-check: mark broken rules with red stripes as you go (the settings menu can turn it off).
+  const autoCheck = settings.autoCheck !== false;
+  const err = useMemo(
+    () => (autoCheck ? errors(puzzle, state) : { cells: new Set<number>(), signs: new Set<number>() }),
+    [puzzle, state, autoCheck],
+  );
   const marked = useMemo(() => new Set(mark ?? []), [mark]);
 
   const set = (i: number, v: number) => {
@@ -26,7 +31,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
     next[i] = v;
     const before = errors(puzzle, state);
     const after = errors(puzzle, next);
-    const worse = after.cells.size + after.signs.size > before.cells.size + before.signs.size;
+    const worse = autoCheck && after.cells.size + after.signs.size > before.cells.size + before.signs.size;
     apply(next, { sound: worse ? "error" : v ? "place" : "erase", step: v === SUN ? 4 : 2 });
   };
   const cycle = (i: number) => set(i, state[i] === 0 ? SUN : state[i] === SUN ? MOON : 0);

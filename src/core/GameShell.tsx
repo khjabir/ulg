@@ -22,6 +22,7 @@ import { Dialog } from "./Dialog";
 import { Confetti } from "./Confetti";
 import { onSoundChange, setSoundOn, sfx, soundOn } from "./sound";
 import { afterSplash } from "./app";
+import { defaultsFor, loadSettings, saveSetting, SHARED_SETTINGS } from "./settings";
 import {
   BackIcon,
   HelpIcon,
@@ -29,8 +30,7 @@ import {
   ResetIcon,
   ShareIcon,
   ShuffleIcon,
-  SoundOffIcon,
-  SoundOnIcon,
+  SettingsIcon,
   StatsIcon,
   UndoIcon,
 } from "./Icons";
@@ -44,7 +44,7 @@ type Status = { text: string; alert?: boolean } | null;
  */
 const HINT_WAIT_MS = 10_000;
 const defaultHintWait = () => HINT_WAIT_MS;
-type DialogKind = "help" | "stats" | "win" | null;
+type DialogKind = "help" | "stats" | "win" | "settings" | null;
 
 interface Play<P, S> {
   puzzle: P;
@@ -83,6 +83,17 @@ function useStopwatch(running: boolean) {
 export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P, S, M> }) {
   const levelIds = useMemo(() => def.levels.map((l) => l.id), [def]);
   const hintWait = useCallback((used: number) => def.hintWait?.(used) ?? defaultHintWait(), [def]);
+
+  // Settings (gear menu): shared ones plus this game's. Defaults on the server,
+  // the saved choices once on the device.
+  const [settings, setSettings] = useState<Record<string, boolean>>(() => defaultsFor(def.settings ?? []));
+  useEffect(() => setSettings(loadSettings(def.id, def.settings ?? [])), [def]);
+  const toggleSetting = (id: string) => {
+    const value = !settings[id];
+    saveSetting(def.id, id, value);
+    setSettings((cur) => ({ ...cur, [id]: value }));
+    sfx.tap();
+  };
   const [level, setLevel] = useState(def.levels[0].id);
   const [play, setPlay] = useState<Play<P, S> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -396,10 +407,13 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
 
   // Broken rules and dead ends, as the game sees them after every move.
   const puzzle = play?.puzzle ?? null;
-  const problem = useMemo(
+  const found = useMemo(
     () => (puzzle && state !== null && !won && !loading && def.check ? def.check(puzzle, state) : null),
     [def, puzzle, state, won, loading],
   );
+  // With Auto-check off, broken rules aren't pointed out; a real dead end still is.
+  const autoCheckOff = (def.settings ?? []).some((d) => d.id === "autoCheck") && settings.autoCheck === false;
+  const problem = found && autoCheckOff && found.kind === "rule" ? null : found;
   const flagged = useMemo(() => new Set(problem?.cells ?? []), [problem]);
 
   // Announce a problem once, right after the move that caused it: a buzz (unless the
@@ -462,14 +476,8 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
         </Link>
         <h1 className="game-title">{def.name}</h1>
         <div className="top-actions">
-          <button
-            type="button"
-            className="icon-btn"
-            aria-label={sound ? "Mute sounds" : "Turn sounds on"}
-            aria-pressed={!sound}
-            onClick={() => setSoundOn(!sound)}
-          >
-            {sound ? <SoundOnIcon /> : <SoundOffIcon />}
+          <button type="button" className="icon-btn" aria-label="Settings" onClick={() => setDialog("settings")}>
+            <SettingsIcon />
           </button>
           <button type="button" className="icon-btn" aria-label="How to play" onClick={() => setDialog("help")}>
             <HelpIcon />
@@ -498,8 +506,8 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
       </div>
 
       <div className="meta">
-        <span className="timer" role="timer" aria-label="Time">
-          {formatTime(stopwatch.get())}
+        <span className={`timer ${settings.showTimer === false ? "hidden" : ""}`} role="timer" aria-label="Time">
+          {settings.showTimer === false ? "" : formatTime(stopwatch.get())}
         </span>
         <span className="code">{play ? `Puzzle ${seedToCode(play.puzzle.seed)}` : "Shuffling…"}</span>
       </div>
@@ -521,6 +529,7 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
             dealing={dealing}
             say={say}
             flagged={flagged}
+            settings={settings}
           />
         )}
       </div>
@@ -588,6 +597,34 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
         <HowTo />
         <button type="button" className="btn primary" data-autofocus onClick={() => setDialog(null)}>
           Play
+        </button>
+      </Dialog>
+
+      <Dialog open={dialog === "settings"} onClose={() => setDialog(null)} title="Settings" label="Settings" className="settings">
+        <ul className="switches">
+          <li>
+            <label>
+              <span>
+                <b>Sound</b>
+                <small>Clacks, chimes and the win fanfare.</small>
+              </span>
+              <input type="checkbox" role="switch" checked={sound} onChange={() => setSoundOn(!sound)} />
+            </label>
+          </li>
+          {[...SHARED_SETTINGS, ...(def.settings ?? [])].map((d) => (
+            <li key={d.id}>
+              <label>
+                <span>
+                  <b>{d.label}</b>
+                  <small>{d.help}</small>
+                </span>
+                <input type="checkbox" role="switch" checked={!!settings[d.id]} onChange={() => toggleSetting(d.id)} />
+              </label>
+            </li>
+          ))}
+        </ul>
+        <button type="button" className="btn primary" data-autofocus onClick={() => setDialog(null)}>
+          Done
         </button>
       </Dialog>
 

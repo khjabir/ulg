@@ -1,4 +1,5 @@
 import type { GameDef } from "@/core/types";
+import { AUTO_CHECK } from "@/core/settings";
 import { Moon, Sun, TangleIcon } from "@/core/Icons";
 import { check, hint, initialState, isSolved, N, type TanglePuzzle, type TangleState } from "./engine";
 import { Board } from "./Board";
@@ -70,6 +71,7 @@ export const tangle: GameDef<TanglePuzzle, TangleState, number[]> = {
   progress: (_p, s) => ({ done: s.filter(Boolean).length, total: N * N }),
   hint,
   check,
+  settings: [AUTO_CHECK],
   Board,
   HowTo,
   Icon: TangleIcon,

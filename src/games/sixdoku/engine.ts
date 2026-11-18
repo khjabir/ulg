@@ -153,12 +153,25 @@ export function isSolved(_p: SudokuPuzzle, s: SudokuState): boolean {
 }
 
 /** Place a digit and clear that digit from the notes of its peers. */
+/**
+ * Put a digit in a cell (0 takes it out). As in LinkedIn's Mini Sudoku, the cell's
+ * own notes are only hidden under the digit: take the digit out and they come back.
+ * The digit is crossed off its row, column and box neighbours' notes.
+ */
 export function placeDigit(s: SudokuState, i: number, d: number): SudokuState {
   const values = s.values.slice();
   const notes = s.notes.slice();
   values[i] = d;
-  notes[i] = 0;
   if (d) for (const j of PEERS[i]) notes[j] &= ~(1 << d);
+  return { values, notes };
+}
+
+/** Erase: clear a cell's digit and its notes for good. */
+export function eraseCell(s: SudokuState, i: number): SudokuState {
+  const values = s.values.slice();
+  const notes = s.notes.slice();
+  values[i] = 0;
+  notes[i] = 0;
   return { values, notes };
 }
 

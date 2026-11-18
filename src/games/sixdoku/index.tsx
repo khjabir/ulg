@@ -1,4 +1,5 @@
 import type { GameDef } from "@/core/types";
+import { AUTO_CHECK } from "@/core/settings";
 import { SudokuIcon } from "@/core/Icons";
 import { check, hint, initialState, isSolved, N, type SudokuPuzzle, type SudokuState } from "./engine";
 import { Board } from "./Board";
@@ -45,6 +46,21 @@ export const sixdoku: GameDef<SudokuPuzzle, SudokuState, number[]> = {
   progress: (_p, s) => ({ done: s.values.filter(Boolean).length, total: N * N }),
   hint,
   check,
+  settings: [
+    AUTO_CHECK,
+    {
+      id: "countRemaining",
+      label: "Count remaining numbers",
+      help: "Show on each key how many of that digit are still to place.",
+      default: true,
+    },
+    {
+      id: "highlightSections",
+      label: "Highlight sections",
+      help: "Shade the row, column and box of the cell you've selected.",
+      default: true,
+    },
+  ],
   Board,
   HowTo,
   Icon: SudokuIcon,

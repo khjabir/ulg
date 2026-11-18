@@ -1,4 +1,5 @@
 import type { GameDef } from "@/core/types";
+import { AUTO_CHECK } from "@/core/settings";
 import { Crown, KingsIcon } from "@/core/Icons";
 import { check, hint, initialState, isSolved, KING, type KingsPuzzle, type KingsState } from "./engine";
 import { Board, REGION_COLORS } from "./Board";
@@ -55,6 +56,15 @@ export const kings: GameDef<KingsPuzzle, KingsState, number[]> = {
   pips: true,
   hint,
   check,
+  settings: [
+    AUTO_CHECK,
+    {
+      id: "autoX",
+      label: "Auto-place X's",
+      help: "Cross out every cell a king rules out as soon as you place it.",
+      default: false,
+    },
+  ],
   Board,
   HowTo,
   Icon: KingsIcon,

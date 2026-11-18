@@ -9,7 +9,9 @@ import {
   area,
   clueIn,
   inRect,
+  MIN_AREA,
   mismatch,
+  overlapping,
   rectCells,
   sameRect,
   swatchFits,
@@ -92,12 +94,15 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
   const cellAt = (x: number, y: number) => (gridRef.current ? cellFromPoint(gridRef.current, x, y, rows, cols) : null);
   const swatchAt = (cell: number) => state.find((r) => inRect(r, Math.floor(cell / cols), cell % cols));
 
+  /** Swatches never overlap: does `rect` run into one already drawn (other than `editing`)? */
+  const hitsOthers = (rect: Rect, editing: Rect | null) => state.some((r) => r !== editing && overlapping(r, rect));
+
   /**
    * Move a drag to the cell under the finger and return the rectangle it now covers.
-   * A swatch can hold only one clue, so the drag never takes in a second one: it
-   * tries the whole move, then the move along one direction only (so you can still
-   * slide along the clue's edge), and otherwise stops where it was. Pulling back
-   * works as usual.
+   * A swatch holds one clue and never overlaps another swatch, so the drag stops at
+   * a second clue and at the edge of any swatch already drawn: it tries the whole
+   * move, then the move along one direction only (so you can still slide along that
+   * edge), and otherwise stays where it was. Pulling back works as usual.
    */
   const rectFor = (d: Drag, at: number): Rect => {
     const row = Math.floor(at / cols);
@@ -119,7 +124,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
         const [c0, c1] = span(colAxis, c);
         rect = { r0, c0, r1, c1 };
       }
-      if (clueIn(puzzle, rect) === -2) continue;
+      if (clueIn(puzzle, rect) === -2 || hitsOthers(rect, d.editing)) continue;
       Object.assign(d, { rowAxis, colAxis, row: r, col: c, rect });
       return rect;
     }
@@ -146,6 +151,16 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
       return;
     }
     if (editing && sameRect(editing, rect)) return;
+    // As in Patches, there are no one-cell swatches: every clue covers 2 cells or more.
+    if (area(rect) < MIN_AREA) {
+      if (tapped) say("Drag from the clue across the cells to draw its swatch.");
+      else say(editing ? "A swatch covers at least 2 cells, so the old one stays." : "A swatch covers at least 2 cells.");
+      return;
+    }
+    if (hitsOthers(rect, editing)) {
+      say("Swatches can't overlap. Tap the one in the way to remove it, or drag its edge to make room.");
+      return;
+    }
     // A swatch that breaks its clue still goes down (you may be mid-way through a
     // reshape); the shell's check explains what's wrong and keeps it highlighted.
     apply(addSwatch(state, rect), { sound: mismatch(puzzle, rect) ? "error" : "place", step: area(rect) });

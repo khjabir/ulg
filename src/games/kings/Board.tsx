@@ -5,7 +5,7 @@ import type { BoardProps } from "@/core/types";
 import { Crown } from "@/core/Icons";
 import { cellFromPoint } from "@/core/geometry";
 import { sfx } from "@/core/sound";
-import { conflicts, EMPTY, MARK, KING, type KingsPuzzle, type KingsState } from "./engine";
+import { conflicts, EMPTY, MARK, KING, ruledOut, type KingsPuzzle, type KingsState } from "./engine";
 
 export const REGION_COLORS = [
   "#f4b7a2",
@@ -25,7 +25,7 @@ const EDGE = "#26211c";
 
 type Drag = { start: number; id: number; mode: "mark" | "erase" | "none"; moved: boolean; last: number; draft: KingsState | null };
 
-export function Board({ puzzle, state, apply, interactive, won, mark, dealing, flagged }: BoardProps<KingsPuzzle, KingsState, number[]>) {
+export function Board({ puzzle, state, apply, interactive, won, mark, dealing, flagged, settings }: BoardProps<KingsPuzzle, KingsState, number[]>) {
   const { n, regions } = puzzle;
   const gridRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
@@ -33,7 +33,11 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, f
   const [focus, setFocus] = useState(0);
   const cellRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const shown = draft ?? state;
-  const bad = useMemo(() => conflicts(puzzle, shown), [puzzle, shown]);
+  // Auto-check marks clashing kings; Auto-place X's crosses out what the kings rule
+  // out. Auto X's aren't saved: they follow the kings, so removing a king removes them.
+  const autoCheck = settings.autoCheck !== false;
+  const bad = useMemo(() => (autoCheck ? conflicts(puzzle, shown) : new Set<number>()), [puzzle, shown, autoCheck]);
+  const autoX = useMemo(() => (settings.autoX ? ruledOut(puzzle, shown) : new Set<number>()), [puzzle, shown, settings.autoX]);
   const marked = useMemo(() => new Set(mark ?? []), [mark]);
 
   // Thick lines where regions meet.
@@ -56,13 +60,14 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, f
   /** Commit a change, with a sound that says what happened (a clash sounds wrong). */
   const commit = (next: KingsState, cell: number) => {
     const v = next[cell];
-    const clash = v === KING && conflicts(puzzle, next).has(cell);
+    const clash = autoCheck && v === KING && conflicts(puzzle, next).has(cell);
     apply(next, { sound: clash ? "error" : v === KING ? "place" : v === MARK ? "mark" : "erase", step: Math.floor(cell / n) });
   };
 
   const cycle = (i: number) => {
     const next = state.slice();
-    next[i] = state[i] === EMPTY ? MARK : state[i] === MARK ? KING : EMPTY;
+    const cur = state[i] === EMPTY && autoX.has(i) ? MARK : state[i]; // an auto X counts as an X
+    next[i] = cur === EMPTY ? MARK : cur === MARK ? KING : EMPTY;
     commit(next, i);
   };
 
@@ -160,8 +165,10 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, f
         onPointerCancel={(e) => finish(e, true)}
         onKeyDown={onKeyDown}
       >
-        {shown.map((v, i) => {
-          const label = v === KING ? "king" : v === MARK ? "marked" : "empty";
+        {shown.map((stored, i) => {
+          const auto = stored === EMPTY && autoX.has(i);
+          const v = auto ? MARK : stored;
+          const label = v === KING ? "king" : v === MARK ? (auto ? "ruled out" : "marked") : "empty";
           return (
             <button
               key={i}
@@ -187,7 +194,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, f
               onContextMenu={(e) => e.preventDefault()}
             >
               {v === KING && <Crown className="q-king" />}
-              {v === MARK && <span className="q-x" aria-hidden />}
+              {v === MARK && <span className={`q-x ${auto ? "auto" : ""}`} aria-hidden />}
             </button>
           );
         })}

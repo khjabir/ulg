@@ -3,9 +3,10 @@ import type { BasePuzzle, HintResult, Problem } from "../../core/puzzle";
 
 /**
  * Swatches: split the grid into rectangles. Each swatch holds exactly one clue.
- * A clue may give the swatch's size (cell count) and/or its shape: square, wide
- * (wider than tall) or tall (taller than wide). Some clues give neither.
- * Every generated puzzle has exactly one solution.
+ * Like LinkedIn's Patches, every clue has a shape badge (square, wide, tall, or any)
+ * and may also give the swatch's size in cells; shape-only clues leave the size for
+ * you to work out. Swatches are always at least 2 cells, and every generated puzzle
+ * has exactly one solution.
  */
 
 export type Shape = "square" | "wide" | "tall";
@@ -32,11 +33,20 @@ export type SwatchesState = Rect[];
 
 export const PALETTE_SIZE = 8;
 
-const LEVELS: Record<string, { size: number; maxArea: number; strip: "none" | "shape" | "all" }> = {
-  easy: { size: 5, maxArea: 6, strip: "none" },
-  medium: { size: 6, maxArea: 8, strip: "shape" },
-  hard: { size: 7, maxArea: 9, strip: "all" },
+/**
+ * How much each level leaves out, as in LinkedIn's week: easy boards number every
+ * clue; harder ones drop numbers (leaving shape-only clues), turn some shapes into
+ * "any", and on Hard allow a clue with neither. Removals that would make the answer
+ * ambiguous are put back, so these are upper limits.
+ */
+const LEVELS: Record<string, { size: number; maxArea: number; dropNumbers: number; anyShapes: number; bare: number }> = {
+  easy: { size: 5, maxArea: 6, dropNumbers: 0, anyShapes: 0, bare: 0 },
+  medium: { size: 6, maxArea: 8, dropNumbers: 0.4, anyShapes: 0.15, bare: 0 },
+  hard: { size: 8, maxArea: 12, dropNumbers: 0.75, anyShapes: 0.3, bare: 2 },
 };
+
+/** The smallest swatch: LinkedIn's Patches never has single-cell patches. */
+export const MIN_AREA = 2;
 
 export const area = (r: Rect) => (r.r1 - r.r0 + 1) * (r.c1 - r.c0 + 1);
 export const shapeOf = (r: Rect): Shape => {
@@ -53,7 +63,7 @@ export function rectCells(r: Rect, cols: number): number[] {
 }
 
 /** Random partition: fill row-major, each new swatch anchored at the first open cell. */
-function partition(rows: number, cols: number, maxArea: number, rng: Rng): Rect[] {
+function partition(rows: number, cols: number, maxArea: number, rng: Rng): Rect[] | null {
   const covered = new Uint8Array(rows * cols);
   const rects: Rect[] = [];
   for (let i = 0; i < rows * cols; i++) {
@@ -67,9 +77,12 @@ function partition(rows: number, cols: number, maxArea: number, rng: Rng): Rect[
         for (let rr = r; rr < r + h && free; rr++) for (let cc = c; cc < c + w && free; cc++) if (covered[rr * cols + cc]) free = false;
         if (!free) break;
         const a = h * w;
-        options.push({ h, w, weight: a === 1 ? 0.08 : a === 2 ? 0.6 : 1 });
+        // Filling row by row favours tall pieces, so lean on wide and square ones a
+        // little to get a LinkedIn-like mix (squares like 2×2 and 3×3 are common there).
+        if (a >= MIN_AREA) options.push({ h, w, weight: (a === 2 ? 0.6 : 1) * (h === w ? 2.6 : w > h ? 1.5 : 1) });
       }
     }
+    if (!options.length) return null; // boxed into a single cell: try another layout
     let x = rng() * options.reduce((s, o) => s + o.weight, 0);
     let o = options[0];
     for (const opt of options) {
@@ -171,9 +184,9 @@ export function generate(level: string, seed: number): SwatchesPuzzle {
   const rng = mulberry32(seed);
   const rows = cfg.size;
   const cols = cfg.size;
-  for (let attempt = 0; attempt < 400; attempt++) {
+  for (let attempt = 0; attempt < 2000; attempt++) {
     const rects = partition(rows, cols, cfg.maxArea, rng);
-    if (rects.filter((r) => area(r) === 1).length > 1) continue;
+    if (!rects) continue;
     const colours = colourSwatches(rects, rng);
     const clues: SwatchClue[] = rects.map((r, k) => {
       const cells = rectCells(r, cols);
@@ -182,23 +195,30 @@ export function generate(level: string, seed: number): SwatchesPuzzle {
     const p = { rows, cols, clues };
     if (countTilings(p) !== 1) continue;
 
-    if (cfg.strip !== "none") {
-      const items: { k: number; field: "size" | "shape" }[] = [];
-      clues.forEach((_, k) => {
-        items.push({ k, field: "shape" });
-        if (cfg.strip === "all") items.push({ k, field: "size" });
-      });
-      shuffle(rng, items);
-      const limit = cfg.strip === "shape" ? Math.ceil(clues.length * 0.6) : Infinity;
-      let stripped = 0;
-      for (const it of items) {
-        if (stripped >= limit) break;
-        const before = clues[it.k][it.field];
-        // never leave a 1-cell swatch without its size: it reads as a stray tile
-        if (it.field === "size" && clues[it.k].size === 1) continue;
-        (clues[it.k] as unknown as Record<string, unknown>)[it.field] = null;
-        if (countTilings(p) === 1) stripped++;
-        else (clues[it.k] as unknown as Record<string, unknown>)[it.field] = before;
+    // Leave information out while the answer stays unique: numbers first (keeping
+    // the shape), then some shapes become "any", then (Hard) a few clues lose both.
+    const keepUnique = (k: number, field: "size" | "shape") => {
+      const before = clues[k][field];
+      (clues[k] as unknown as Record<string, unknown>)[field] = null;
+      if (countTilings(p) === 1) return true;
+      (clues[k] as unknown as Record<string, unknown>)[field] = before;
+      return false;
+    };
+    const order = shuffle(rng, range(clues.length));
+    let dropped = 0;
+    for (const k of order) {
+      if (dropped >= Math.round(clues.length * cfg.dropNumbers)) break;
+      if (keepUnique(k, "size")) dropped++;
+    }
+    let anyShapes = 0;
+    let bare = 0;
+    for (const k of shuffle(rng, range(clues.length))) {
+      if (anyShapes >= Math.round(clues.length * cfg.anyShapes)) break;
+      const wouldBeBare = clues[k].size === null;
+      if (wouldBeBare && bare >= cfg.bare) continue;
+      if (keepUnique(k, "shape")) {
+        anyShapes++;
+        if (wouldBeBare) bare++;
       }
     }
     return { game: "swatches", level, seed, rows, cols, clues, solution: rects };
@@ -233,9 +253,10 @@ export function swatchFits(p: SwatchesPuzzle, rect: Rect): boolean {
   return (clue.size === null || clue.size === area(rect)) && (clue.shape === null || clue.shape === shapeOf(rect));
 }
 
-const overlaps = (a: Rect, b: Rect) => !(a.r1 < b.r0 || b.r1 < a.r0 || a.c1 < b.c0 || b.c1 < a.c0);
+export const overlapping = (a: Rect, b: Rect) => !(a.r1 < b.r0 || b.r1 < a.r0 || a.c1 < b.c0 || b.c1 < a.c0);
+const overlaps = overlapping;
 
-/** Add a swatch, replacing any it overlaps. */
+/** Add a swatch, replacing any it overlaps (the board never draws overlaps; hints may replace). */
 export function addSwatch(s: SwatchesState, rect: Rect): SwatchesState {
   return s.filter((r) => !overlaps(r, rect)).concat([rect]);
 }

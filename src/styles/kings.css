@@ -146,3 +146,8 @@
     transform: translateY(-22%) scale(1.15) rotate(-6deg);
   }
 }
+
+/* Auto-place X's: crosses that follow the kings, drawn a little lighter than your own. */
+.q-x.auto {
+  opacity: 0.45;
+}

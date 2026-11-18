@@ -294,6 +294,28 @@ for (const game of games) {
   console.log(`no predictions: ${quietWrong} wrong-but-legal moves drew no warning`);
 }
 
+// Swatches follows LinkedIn's Patches: no single-cell swatches, every clue has a shape
+// badge, and harder levels leave numbers off (shape-only clues).
+{
+  for (const level of ["easy", "medium", "hard"]) {
+    let shapeOnly = 0;
+    let numbered = 0;
+    for (let i = 1; i <= 40; i++) {
+      const sp = generators.swatches(level, (i * 2654435761) >>> 0) as P.SwatchesPuzzle;
+      const small = sp.solution.find((r) => P.area(r) < 2);
+      if (small) fail(`swatches ${level}: a 1-cell swatch in the solution`);
+      if (sp.clues.some((c) => c.size === 1)) fail(`swatches ${level}: a clue of 1`);
+      for (const c of sp.clues) {
+        if (c.size === null && c.shape !== null) shapeOnly++;
+        if (c.size !== null) numbered++;
+      }
+    }
+    if (level === "easy" && shapeOnly) fail("swatches easy: every clue should be numbered");
+    if (level !== "easy" && shapeOnly < 40) fail(`swatches ${level}: too few shape-only clues (${shapeOnly} in 40 boards)`);
+    console.log(`swatches ${level}: smallest swatch 2+, ${numbered} numbered and ${shapeOnly} shape-only clues in 40 boards`);
+  }
+}
+
 // Reported: a swatch that fits its own clue must not be flagged for crowding another.
 {
   const sp = generators.swatches("easy", codeToSeed("1LLD0J7")!) as P.SwatchesPuzzle;

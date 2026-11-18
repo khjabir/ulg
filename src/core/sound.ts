@@ -1,5 +1,7 @@
 "use client";
 
+import { vibrationOn } from "./settings";
+
 /**
  * Small synthesized sound kit (Web Audio, no audio files): wooden clacks for
  * placing pieces, marimba notes for merges and checkpoints, a soft bonk for
@@ -70,7 +72,7 @@ function audio(): AudioContext | null {
 }
 
 function buzz(pattern: number | number[]) {
-  if (!soundOn()) return;
+  if (!vibrationOn()) return;
   try {
     navigator.vibrate?.(pattern);
   } catch {

@@ -52,12 +52,12 @@ Each game is a self-contained module, so the shelf keeps growing:
     <td align="center">
       <img src="docs/screens/sixdoku.png" width="240" alt="Sixdoku board with a pencil note"><br>
       <b>Sixdoku</b><br>
-      <sub>Sudoku on a 6×6 grid: digits 1 to 6 once per row, column and 2×3 box. Pencil notes included.</sub>
+      <sub>Sudoku on a 6×6 grid: digits 1 to 6 once per row, column and 2×3 box. Pencil notes hide under a digit and come back if you take it out.</sub>
     </td>
     <td align="center">
       <img src="docs/screens/swatches.png" width="240" alt="Swatches board with coloured rectangles"><br>
       <b>Swatches</b><br>
-      <sub>Cut the grid into rectangles with exactly one clue in each. A clue can give the size, the shape, both, or neither.</sub>
+      <sub>Cut the grid into rectangles of 2 or more cells, one clue in each. The badge gives the shape (square, wide, tall or any); a number, when there is one, gives the size.</sub>
     </td>
   </tr>
 </table>
@@ -71,7 +71,7 @@ Every game sets its own levels. Today's games each have three:
 | Tangle | 6×6, extra givens | 6×6 | 6×6, fewest givens |
 | Zap | 6×6 | 7×7 with walls | 8×8, more walls |
 | Sixdoku | 16 givens | 12 givens | as few as possible |
-| Swatches | 5×5, full clues | 6×6, some shapes hidden | 7×7, sizes and shapes hidden |
+| Swatches | 5×5, every clue numbered | 6×6, some shape-only clues | 8×8, mostly shape-only clues |
 
 ## Why it's fun to play
 
@@ -82,6 +82,7 @@ Every game sets its own levels. Today's games each have three:
 - **Drawing is forgiving.** Zap's line follows your finger smoothly. In Swatches you can start a drag anywhere, even on the clue, and sweep one way and then back the other. You can also grab a drawn swatch by its edge to resize it. Drags that overshoot the board's edge still land on the edge row.
 - **You can challenge a friend.** Every board has a code, and *Challenge a friend* shares a link that rebuilds exactly the same puzzle.
 - **It keeps your place.** Games in progress, best times, averages and hint-free streaks are all saved on the device.
+- **Settings like the originals.** The gear menu in each game has sound, vibration and a timer you can hide, plus Auto-check (red marks for broken rules) in Kings, Tangle and Sixdoku, Auto-place X's in Kings, and the remaining-number counts and section highlights in Sixdoku.
 - **It's a real app.** Install it from the home screen card or the ⋯ menu and it opens full screen with its own icon and launch screen, and plays offline. When a new version comes out, it asks before updating. It supports dark mode and full keyboard play, and it respects reduced motion.
 
 <p align="center">

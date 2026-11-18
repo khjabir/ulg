@@ -4,15 +4,21 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type Keyboard
 import type { BoardProps } from "@/core/types";
 import { EraseIcon, PencilIcon } from "@/core/Icons";
 import { sfx } from "@/core/sound";
-import { boxOf, BOX_C, BOX_R, conflicts, N, placeDigit, type SudokuPuzzle, type SudokuState } from "./engine";
+import { boxOf, BOX_C, BOX_R, conflicts, eraseCell, N, placeDigit, type SudokuPuzzle, type SudokuState } from "./engine";
 
 const EDGE = "#2c2f35";
 
-export function Board({ puzzle, state, apply, interactive, won, mark, dealing, say, flagged }: BoardProps<SudokuPuzzle, SudokuState, number[]>) {
+export function Board({ puzzle, state, apply, interactive, won, mark, dealing, say, flagged, settings }: BoardProps<SudokuPuzzle, SudokuState, number[]>) {
   const [sel, setSel] = useState(() => Math.max(0, puzzle.givens.findIndex((v) => !v)));
   const [notesMode, setNotesMode] = useState(false);
   const cellRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const bad = useMemo(() => conflicts(state.values), [state.values]);
+  // Settings: Auto-check marks clashes in red; Count remaining shows how many of each
+  // digit are left on the keys; Highlight sections shades the selected cell's row,
+  // column and box.
+  const autoCheck = settings.autoCheck !== false;
+  const showCounts = settings.countRemaining !== false;
+  const showSections = settings.highlightSections !== false;
+  const bad = useMemo(() => (autoCheck ? conflicts(state.values) : new Set<number>()), [state.values, autoCheck]);
   const marked = useMemo(() => new Set(mark ?? []), [mark]);
   const selDigit = state.values[sel];
 
@@ -48,18 +54,14 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
       apply({ values: state.values, notes }, { sound: "mark" });
       return;
     }
+    // Erase clears the cell for good: its digit and its notes.
     if (!d) {
-      if (state.values[sel]) apply(placeDigit(state, sel, 0), { sound: "erase" });
-      else if (state.notes[sel]) {
-        const notes = state.notes.slice();
-        notes[sel] = 0;
-        apply({ values: state.values, notes }, { sound: "erase" });
-      }
+      if (state.values[sel] || state.notes[sel]) apply(eraseCell(state, sel), { sound: "erase" });
       return;
     }
     const value = state.values[sel] === d ? 0 : d;
     const next = placeDigit(state, sel, value);
-    const clash = value !== 0 && conflicts(next.values).has(sel);
+    const clash = autoCheck && value !== 0 && conflicts(next.values).has(sel);
     apply(next, { sound: value === 0 ? "erase" : clash ? "error" : "place", step: d });
   };
 
@@ -99,7 +101,9 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
           {state.values.map((v, i) => {
             const given = !!puzzle.givens[i];
             const peer =
-              i !== sel && (Math.floor(i / N) === Math.floor(sel / N) || i % N === sel % N || boxOf(i) === boxOf(sel));
+              showSections &&
+              i !== sel &&
+              (Math.floor(i / N) === Math.floor(sel / N) || i % N === sel % N || boxOf(i) === boxOf(sel));
             const cls = [
               "s-cell",
               "fx-cell",
@@ -155,13 +159,13 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
               <button
                 key={d}
                 type="button"
-                className={`s-key ${left === 0 ? "done" : ""}`}
+                className={`s-key ${showCounts && left === 0 ? "done" : ""}`}
                 onClick={() => input(d)}
                 disabled={!interactive}
-                aria-label={`${d}, ${left === 0 ? "all placed" : `${left} left`}`}
+                aria-label={showCounts ? `${d}, ${left === 0 ? "all placed" : `${left} left`}` : String(d)}
               >
                 {d}
-                <small aria-hidden>{left === 0 ? "✓" : left}</small>
+                {showCounts && <small aria-hidden>{left === 0 ? "✓" : left}</small>}
               </button>
             );
           })}

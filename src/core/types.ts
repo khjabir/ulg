@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import type { BasePuzzle, GameId, HintResult, Problem } from "./puzzle";
 import type { SoundName } from "./sound";
+import type { GameSetting, SettingValues } from "./settings";
 
 export type { BasePuzzle, GameId, HintResult, Problem };
 
@@ -31,6 +32,8 @@ export interface BoardProps<P, S, M> {
   say: (text: string, alert?: boolean) => void;
   /** Cells the current problem points at (see GameDef.check). Give them the `flagged` class. */
   flagged: ReadonlySet<number>;
+  /** The player's settings: the shared ones plus this game's (GameDef.settings). */
+  settings: SettingValues;
 }
 
 export interface GameDef<P extends BasePuzzle = any, S = any, M = any> {
@@ -61,6 +64,12 @@ export interface GameDef<P extends BasePuzzle = any, S = any, M = any> {
    * flat 10 s (HINT_WAIT_MS in the shell).
    */
   hintWait?(hintsUsed: number): number;
+  /**
+   * Switches for this game in the settings menu, besides the shared ones (sound,
+   * vibration, timer). The board reads them from `settings`. A setting with the id
+   * "autoCheck" also hides the shell's "rule" problems while it's off.
+   */
+  settings?: GameSetting[];
   Board: ComponentType<BoardProps<P, S, M>>;
   HowTo: ComponentType;
   Icon: ComponentType;

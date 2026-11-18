@@ -233,6 +233,29 @@ export function check(p: KingsPuzzle, s: KingsState): Problem | null {
   return null;
 }
 
+/** Empty cells that a placed king rules out: same row, column or colour, or touching (for Auto-place X's). */
+export function ruledOut(p: KingsPuzzle, s: KingsState): Set<number> {
+  const { n, regions } = p;
+  const kings: number[] = [];
+  s.forEach((v, i) => v === KING && kings.push(i));
+  const out = new Set<number>();
+  if (!kings.length) return out;
+  s.forEach((v, i) => {
+    if (v !== EMPTY) return;
+    const r = Math.floor(i / n);
+    const c = i % n;
+    for (const k of kings) {
+      const kr = Math.floor(k / n);
+      const kc = k % n;
+      if (kr === r || kc === c || regions[k] === regions[i] || (Math.abs(kr - r) <= 1 && Math.abs(kc - c) <= 1)) {
+        out.add(i);
+        break;
+      }
+    }
+  });
+  return out;
+}
+
 export function isSolved(p: KingsPuzzle, s: KingsState): boolean {
   const count = s.reduce((k, v) => k + (v === KING ? 1 : 0), 0);
   return count === p.n && conflicts(p, s).size === 0;
