@@ -1,0 +1,273 @@
+/* ---------------- Sumbroke ---------------- */
+
+.sb-board {
+  --pad: 3.4cqi;
+  --gap: 2.4cqi;
+  --cell: calc((100cqi - 2 * var(--pad) - (var(--cols) - 1) * var(--gap)) / var(--cols));
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--cell));
+  grid-auto-rows: var(--cell);
+  gap: var(--gap);
+  padding: calc(var(--pad) + 1.2cqi) var(--pad) calc(var(--pad) + 0.4cqi);
+  border-radius: 6cqi;
+  background:
+    radial-gradient(120% 90% at 30% 10%, color-mix(in srgb, var(--felt) 85%, white) 0%, transparent 60%),
+    var(--felt);
+  box-shadow:
+    0 1.6cqi 0 var(--felt-deep),
+    0 3cqi 6cqi -2cqi rgba(10, 40, 38, 0.45);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sb-board[data-cols="4"] {
+  --gap: 2cqi;
+}
+
+.sb-board[data-cols="5"] {
+  --pad: 3cqi;
+  --gap: 1.7cqi;
+}
+
+.sb-cell {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 18%;
+  box-shadow: inset 0 0.5cqi 1.2cqi rgba(0, 0, 0, 0.45);
+  cursor: default;
+  outline-offset: 3px;
+  transition: box-shadow 120ms ease;
+}
+
+.sb-cell.drop-ok {
+  box-shadow:
+    inset 0 0.5cqi 1.2cqi rgba(0, 0, 0, 0.45),
+    0 0 0 0.9cqi var(--mint);
+}
+
+.sb-tile {
+  position: absolute;
+  inset: 0;
+  border-radius: 18%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, var(--tile-top) 0%, var(--tile) 100%);
+  box-shadow:
+    0 calc(var(--cell) * 0.07) 0 var(--tile-edge),
+    0 calc(var(--cell) * 0.07 + 1px) calc(var(--cell) * 0.1) var(--tile-shadow);
+  translate: 0 calc(var(--cell) * -0.035);
+  cursor: grab;
+  will-change: transform;
+  z-index: 1;
+  color: var(--n-black);
+  font-weight: 800;
+  font-stretch: 87.5%;
+  font-size: calc(var(--cell) * 0.5);
+  line-height: 1;
+  font-variant-numeric: lining-nums;
+  letter-spacing: -0.02em;
+}
+
+.sb-tile[data-digits="3"] {
+  font-size: calc(var(--cell) * 0.4);
+  font-stretch: 75%;
+}
+
+.sb-tile[data-digits="4"] {
+  font-size: calc(var(--cell) * 0.33);
+  font-stretch: 70%;
+}
+
+.sb-tile[data-tier="0"] { color: var(--n-blue); }
+.sb-tile[data-tier="1"] { color: var(--n-red); }
+.sb-tile[data-tier="2"] { color: var(--n-orange); }
+.sb-tile[data-tier="3"] { color: var(--n-black); }
+
+.sb-tile.wild {
+  background: linear-gradient(180deg, var(--joker-top) 0%, var(--joker) 100%);
+  box-shadow:
+    0 calc(var(--cell) * 0.07) 0 var(--joker-edge),
+    0 calc(var(--cell) * 0.07 + 1px) calc(var(--cell) * 0.1) var(--tile-shadow);
+  color: var(--joker-ink);
+  font-size: calc(var(--cell) * 0.42);
+  font-stretch: 87.5%;
+}
+
+.sb-tile.wild .op {
+  font-weight: 600;
+  margin-right: 0.04em;
+}
+
+/* little corner pips mark a wildcard as "any number" */
+.sb-tile.wild::before,
+.sb-tile.wild::after {
+  content: "";
+  position: absolute;
+  width: 9%;
+  height: 9%;
+  border-radius: 50%;
+  background: var(--joker-ink);
+  opacity: 0.35;
+}
+.sb-tile.wild::before { top: 11%; left: 11%; }
+.sb-tile.wild::after { bottom: 11%; right: 11%; }
+
+.sb-cell.selected .sb-tile {
+  translate: 0 calc(var(--cell) * -0.11);
+  box-shadow:
+    0 calc(var(--cell) * 0.07) 0 var(--tile-edge),
+    0 calc(var(--cell) * 0.16) calc(var(--cell) * 0.16) var(--tile-shadow),
+    0 0 0 0.9cqi var(--focus);
+}
+
+.sb-cell.selected .sb-tile.wild {
+  box-shadow:
+    0 calc(var(--cell) * 0.07) 0 var(--joker-edge),
+    0 calc(var(--cell) * 0.16) calc(var(--cell) * 0.16) var(--tile-shadow),
+    0 0 0 0.9cqi #fff8e8;
+}
+
+.sb-cell.dragging {
+  z-index: 5;
+}
+
+.sb-cell.dragging .sb-tile {
+  cursor: grabbing;
+  translate: 0 calc(var(--cell) * -0.12);
+  scale: 1.05;
+  box-shadow:
+    0 calc(var(--cell) * 0.07) 0 var(--tile-edge),
+    0 calc(var(--cell) * 0.2) calc(var(--cell) * 0.22) var(--tile-shadow);
+}
+
+.sb-cell.dragging .sb-tile.wild {
+  box-shadow:
+    0 calc(var(--cell) * 0.07) 0 var(--joker-edge),
+    0 calc(var(--cell) * 0.2) calc(var(--cell) * 0.22) var(--tile-shadow);
+}
+
+.sb-cell.moving {
+  z-index: 6;
+}
+
+/* merge "clack" */
+.sb-tile.pop {
+  animation: pop 260ms cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+@keyframes pop {
+  0% { scale: 0.86; }
+  55% { scale: 1.12; }
+  100% { scale: 1; }
+}
+
+/* deal-in on a fresh puzzle */
+.sb-tile.deal {
+  animation: deal 380ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+  animation-delay: calc(var(--i) * 28ms);
+}
+
+@keyframes deal {
+  0% { opacity: 0; scale: 0.6; transform: translateY(-14%); }
+  100% { opacity: 1; scale: 1; transform: none; }
+}
+
+.sb-cell.shake .sb-tile {
+  animation: shake 320ms ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-9%); }
+  40% { transform: translateX(8%); }
+  60% { transform: translateX(-5%); }
+  80% { transform: translateX(3%); }
+}
+
+/* hint */
+.sb-cell.hint-from .sb-tile {
+  animation: hint-pulse 1.1s ease-in-out infinite;
+}
+
+.sb-cell.hint-to {
+  box-shadow:
+    inset 0 0.5cqi 1.2cqi rgba(0, 0, 0, 0.45),
+    0 0 0 0.9cqi var(--focus);
+}
+
+@keyframes hint-pulse {
+  0%, 100% { box-shadow: 0 calc(var(--cell) * 0.07) 0 var(--tile-edge), 0 0 0 0 var(--focus); }
+  50% { box-shadow: 0 calc(var(--cell) * 0.07) 0 var(--tile-edge), 0 0 0 1.4cqi var(--focus); }
+}
+
+.sb-hint-arrow {
+  position: absolute;
+  z-index: 8;
+  width: calc(var(--cell) * 0.36);
+  height: calc(var(--cell) * 0.36);
+  left: calc(var(--pad) + var(--mx) * (var(--cell) + var(--gap)) + var(--cell) / 2);
+  top: calc(var(--pad) + 1.2cqi + var(--my) * (var(--cell) + var(--gap)) + var(--cell) / 2);
+  translate: -50% -50%;
+  rotate: var(--rot);
+  border-radius: 50%;
+  background: var(--focus);
+  color: var(--joker-ink);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.sb-hint-arrow svg {
+  width: 62%;
+  height: 62%;
+}
+
+/* win */
+.sb-cell.winner .sb-tile {
+  animation: winner 1.6s ease-in-out infinite;
+}
+
+@keyframes winner {
+  0%, 100% { box-shadow: 0 calc(var(--cell) * 0.07) 0 var(--tile-edge), 0 0 0 0 rgba(244, 197, 66, 0.9); }
+  50% { box-shadow: 0 calc(var(--cell) * 0.07) 0 var(--tile-edge), 0 0 0 2.2cqi rgba(244, 197, 66, 0); }
+}
+
+.sb-demo {
+  --cell: 30px;
+}
+
+.sb-demo .mini {
+  position: relative;
+  width: var(--cell);
+  height: var(--cell);
+}
+
+.sb-demo .sb-tile {
+  cursor: default;
+}
+
+.sb-demo .mini.empty {
+  border-radius: 18%;
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.45);
+}
+
+
+/* win dialog tile */
+.win-badge .sb-tile {
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-cell.hint-from .sb-tile {
+    box-shadow:
+      0 calc(var(--cell) * 0.07) 0 var(--tile-edge),
+      0 0 0 1cqi var(--focus);
+  }
+}

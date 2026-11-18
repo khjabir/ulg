@@ -1,0 +1,379 @@
+/* ---------------- Game screen ---------------- */
+
+.app {
+  width: min(100%, 520px);
+  margin: 0 auto;
+  padding: max(12px, env(safe-area-inset-top)) 18px max(20px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 13px;
+  min-height: 100svh;
+}
+
+.top {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.back-link {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--felt) 12%, transparent);
+}
+
+.back-link svg {
+  width: 22px;
+  height: 22px;
+}
+
+.game-title {
+  margin: 0;
+  font-size: clamp(19px, 5.6vw, 27px);
+  line-height: 1;
+  font-weight: 900;
+  font-stretch: 112%;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.top-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.diff {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  padding: 4px;
+  border-radius: var(--radius-ui);
+  background: color-mix(in srgb, var(--felt) 10%, var(--page));
+  border: 1px solid var(--line);
+}
+
+.diff button {
+  border: 0;
+  border-radius: var(--radius-ui);
+  background: transparent;
+  padding: 8px 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink-soft);
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  flex-wrap: wrap;
+  column-gap: 6px;
+}
+
+.diff button small {
+  font-weight: 500;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.diff button[aria-checked="true"] {
+  background: var(--felt);
+  color: #fff8e8;
+  box-shadow: 0 2px 0 var(--felt-deep);
+}
+
+.meta {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  color: var(--ink-soft);
+  font-size: 14px;
+  padding: 0 4px;
+}
+
+.timer {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.code {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------- Board area ---------------- */
+
+.board-wrap {
+  container-type: inline-size;
+  width: min(100%, 460px, max(260px, calc(100svh - 370px)));
+}
+
+.tray {
+  --pad: 3.2cqi;
+  position: relative;
+  padding: var(--pad);
+  border-radius: 5.5cqi;
+  background:
+    radial-gradient(120% 90% at 30% 10%, color-mix(in srgb, var(--felt) 82%, white) 0%, transparent 60%),
+    var(--felt);
+  box-shadow:
+    0 1.6cqi 0 var(--felt-deep),
+    0 3cqi 6cqi -2cqi rgba(10, 40, 38, 0.45);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tray.loading {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  color: #fff8e8;
+  font-size: 15px;
+  animation: breathe 1.4s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.tray-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), var(--cell));
+  grid-auto-rows: var(--cell);
+  gap: var(--gap);
+}
+
+.tray.deal > :first-child {
+  animation: deal-in 420ms cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+
+@keyframes deal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+/* "paper" boards: ivory surface with fine grid lines */
+.paper-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  aspect-ratio: var(--cols) / var(--rows);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(to right, var(--paper-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--paper-line) 1px, transparent 1px);
+  background-size: calc(100% / var(--cols)) calc(100% / var(--rows));
+  background-position: -1px -1px;
+  border-radius: 2.4cqi;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.hinted {
+  animation: hinted 1.1s ease-in-out 3;
+}
+
+@keyframes hinted {
+  50% {
+    filter: brightness(1.15);
+    outline: 0.9cqi solid var(--focus);
+    outline-offset: -0.9cqi;
+  }
+}
+
+/* ---------------- Below the board ---------------- */
+
+.pips {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  width: min(100%, 460px);
+  min-height: 10px;
+}
+
+.pip {
+  flex: 0 1 10px;
+  min-width: 4px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--line);
+  transition: background 200ms ease;
+}
+
+.pip.done,
+.progress span {
+  background: var(--felt);
+}
+
+@media (prefers-color-scheme: dark) {
+  .pip.done,
+  .progress span {
+    background: color-mix(in srgb, var(--felt) 55%, white);
+  }
+}
+
+.progress {
+  width: min(100%, 460px);
+  height: 8px;
+  border-radius: 99px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 200ms ease;
+}
+
+.status {
+  min-height: 20px;
+  margin: 0;
+  font-size: 15px;
+  text-align: center;
+  color: var(--ink-soft);
+  max-width: 42ch;
+}
+
+.status.alert {
+  color: var(--n-red);
+  font-weight: 600;
+}
+
+.status-text {
+  display: inline-block;
+  animation: rise 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+@media (max-height: 640px) {
+  .app {
+    gap: 9px;
+  }
+  .game-title {
+    font-size: 23px;
+  }
+}
+
+/* ---------------- Motion ---------------- */
+
+/* the screen settles in, top to bottom */
+.app > * {
+  animation: rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.app > :nth-child(2) {
+  animation-delay: 40ms;
+}
+.app > :nth-child(3) {
+  animation-delay: 80ms;
+}
+.app > :nth-child(4) {
+  animation-delay: 110ms;
+}
+.app > :nth-child(n + 5) {
+  animation-delay: 150ms;
+}
+
+.icon-btn,
+.back-link {
+  transition:
+    transform 120ms ease,
+    background-color 160ms ease;
+}
+
+.icon-btn:active,
+.back-link:active {
+  transform: scale(0.92);
+}
+
+.diff button {
+  transition:
+    background-color 220ms ease,
+    color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.board-wrap.shake {
+  animation: board-shake 380ms ease;
+}
+
+@keyframes board-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: translateX(-7px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+/* winning: a wave rolls across the board from the top-left corner */
+.board-wrap.celebrate .fx-cell {
+  animation: cell-wave 720ms cubic-bezier(0.3, 1.5, 0.5, 1) both;
+  animation-delay: calc(var(--d, 0) * 55ms);
+}
+
+@keyframes cell-wave {
+  40% {
+    transform: translateY(-9%) scale(1.07);
+    filter: brightness(1.12) saturate(1.15);
+  }
+}
+
+.board-wrap.celebrate > .tray,
+.board-wrap.celebrate > .sb-board {
+  animation: tray-glow 1.6s ease-out both;
+}
+
+@keyframes tray-glow {
+  30% {
+    box-shadow:
+      0 1.6cqi 0 var(--felt-deep),
+      0 0 0 1.6cqi rgba(244, 197, 66, 0.55),
+      0 3cqi 10cqi rgba(244, 197, 66, 0.45);
+  }
+}
+
+.progress span {
+  transition: width 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pip {
+  transition:
+    background 220ms ease,
+    transform 220ms cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+.pip.done {
+  transform: scaleY(1.25);
+}

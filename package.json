@@ -1,0 +1,28 @@
+{
+  "name": "ulg",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/build-worker.mjs && next dev",
+    "build": "node scripts/build-worker.mjs && next build && node scripts/generate-sw.mjs",
+    "build:relative": "RELATIVE_ASSETS=1 npm run build",
+    "start": "npx serve out",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/run-ts.mjs scripts/test-engines.ts",
+    "icons": "node scripts/make-icons.mjs"
+  },
+  "dependencies": {
+    "next": "^16.4.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "esbuild": "^0.28.2",
+    "sharp": "^0.35.5",
+    "typescript": "^7.0.2"
+  },
+  "type": "module"
+}

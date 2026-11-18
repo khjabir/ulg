@@ -1,0 +1,227 @@
+/* ---------------- Hub ---------------- */
+
+.hub {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: max(28px, env(safe-area-inset-top)) 18px max(28px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 100svh;
+}
+
+.hub-head {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.hub-mark {
+  margin: 0;
+  display: flex;
+  gap: 8px;
+}
+
+.hub-letter {
+  width: 58px;
+  height: 58px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, var(--tile-top), var(--tile));
+  box-shadow:
+    0 5px 0 var(--tile-edge),
+    0 8px 14px -4px rgba(6, 30, 28, 0.35);
+  font-size: 38px;
+  font-weight: 900;
+  font-stretch: 112%;
+  line-height: 1;
+  padding-bottom: 6px;
+  color: var(--n-blue);
+  animation: letter-in 520ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  animation-delay: calc(var(--i) * 70ms);
+}
+
+.hub-letter:nth-child(2) {
+  color: var(--n-red);
+}
+
+.hub-letter:nth-child(3) {
+  color: var(--n-orange);
+}
+
+@keyframes letter-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) rotate(-6deg);
+  }
+}
+
+.hub-lede {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.45;
+  max-width: 34ch;
+  color: var(--ink-soft);
+}
+
+.hub-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .hub-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.hub-card {
+  display: grid;
+  grid-template-columns: 68px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px 12px 12px;
+  border-radius: 20px;
+  background: var(--button);
+  border: 1px solid var(--line);
+  text-decoration: none;
+  color: inherit;
+  height: 100%;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease;
+}
+
+.hub-card:hover {
+  border-color: var(--felt);
+}
+
+.hub-card:active {
+  transform: translateY(1px);
+}
+
+.hub-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(120% 90% at 30% 10%, color-mix(in srgb, var(--felt) 82%, white) 0%, transparent 60%),
+    var(--felt);
+  box-shadow: 0 4px 0 var(--felt-deep);
+}
+
+.hub-icon svg {
+  width: 48px;
+  height: 48px;
+}
+
+.hub-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.hub-text b {
+  font-size: 19px;
+  font-weight: 800;
+  font-stretch: 112%;
+}
+
+.hub-text span {
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+
+.hub-meta {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--felt);
+  white-space: nowrap;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hub-meta {
+    color: color-mix(in srgb, var(--felt) 45%, white);
+  }
+}
+
+.hub-foot {
+  margin-top: auto;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.hub-foot p {
+  margin: 0 0 4px;
+  max-width: 60ch;
+}
+
+/* cards deal onto the table one after another */
+.hub-list li {
+  animation: rise 480ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.hub-list li:nth-child(1) { animation-delay: 140ms; }
+.hub-list li:nth-child(2) { animation-delay: 190ms; }
+.hub-list li:nth-child(3) { animation-delay: 240ms; }
+.hub-list li:nth-child(4) { animation-delay: 290ms; }
+.hub-list li:nth-child(5) { animation-delay: 340ms; }
+.hub-list li:nth-child(6) { animation-delay: 390ms; }
+
+.hub-lede {
+  animation: rise 480ms cubic-bezier(0.2, 0.8, 0.2, 1) 90ms both;
+}
+
+.hub-icon {
+  transition: transform 220ms cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+.hub-card:hover .hub-icon,
+.hub-card:focus-visible .hub-icon {
+  transform: rotate(-5deg) scale(1.06);
+}
+
+.hub-card:active .hub-icon {
+  transform: scale(0.94);
+}
+
+.hub-sound {
+  margin-left: auto;
+}
+
+.hub-head-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ---------------- Not found ---------------- */
+
+.not-found {
+  justify-content: center;
+  align-items: flex-start;
+  max-width: 520px;
+}
+
+.not-found h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 900;
+  font-stretch: 112%;
+  animation: rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.not-found .btn.primary {
+  width: auto;
+  animation: rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) 160ms both;
+}

@@ -1,0 +1,148 @@
+/* ---------------- Kings ---------------- */
+
+.q-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  gap: 1px;
+  background: rgba(38, 33, 28, 0.35);
+  border: 0.7cqi solid #26211c;
+  border-radius: 2.4cqi;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.q-cell {
+  position: relative;
+  aspect-ratio: 1;
+  border: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: filter 120ms ease;
+}
+
+.q-cell:hover {
+  filter: brightness(1.04);
+}
+
+.q-cell:focus-visible {
+  outline: 0.8cqi solid var(--ink);
+  outline-offset: -0.8cqi;
+  z-index: 2;
+}
+
+.q-king {
+  width: 64%;
+  height: 64%;
+  color: #1d1d1f;
+  position: relative;
+  z-index: 1;
+  animation: q-drop 200ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+
+@keyframes q-drop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+
+.q-x {
+  position: relative;
+  width: 26%;
+  height: 26%;
+}
+
+.q-x::before,
+.q-x::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 130%;
+  height: 0.55cqi;
+  min-height: 2px;
+  border-radius: 2px;
+  background: rgba(29, 29, 31, 0.55);
+  translate: -50% -50%;
+  rotate: 45deg;
+}
+
+.q-x::after {
+  rotate: -45deg;
+}
+
+.q-cell.bad::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(45deg, rgba(195, 49, 59, 0.38) 0 0.8cqi, transparent 0.8cqi 1.8cqi);
+}
+
+.q-cell.bad .q-king {
+  color: var(--n-red);
+}
+
+.q-cell.winner .q-king {
+  color: #8a5a00;
+  filter: drop-shadow(0 0 0.8cqi rgba(244, 197, 66, 0.9));
+}
+
+/* rules demo */
+.q-demo {
+  display: grid;
+  grid-template-columns: repeat(3, 34px);
+  grid-auto-rows: 34px;
+  gap: 1px;
+  background: rgba(38, 33, 28, 0.35);
+  border: 3px solid #26211c;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.q-demo > span {
+  display: grid;
+  place-items: center;
+}
+
+.q-demo .q-king {
+  width: 22px;
+  height: 22px;
+}
+
+.q-demo .q-x {
+  width: 9px;
+  height: 9px;
+}
+
+.q-demo .q-x::before,
+.q-demo .q-x::after {
+  height: 2px;
+}
+
+.q-x {
+  animation: fade-scale 140ms ease-out;
+}
+
+@keyframes fade-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+.q-cell.bad .q-king {
+  animation: wiggle 420ms ease;
+}
+
+.board-wrap.celebrate .q-cell.winner .q-king {
+  animation: q-hop 700ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  animation-delay: calc(var(--d, 0) * 55ms + 150ms);
+}
+
+@keyframes q-hop {
+  45% {
+    transform: translateY(-22%) scale(1.15) rotate(-6deg);
+  }
+}
