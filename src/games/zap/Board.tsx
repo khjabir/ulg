@@ -23,7 +23,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
   const liveRef = useRef<ZapState | null>(null);
   const pointer = useRef<Point | null>(null);
   const frame = useRef(0);
-  const drag = useRef<{ id: number; warned: boolean } | null>(null);
+  const drag = useRef<{ id: number } | null>(null);
   const [live, setLive] = useState<ZapState | null>(null);
   const path = live ?? state;
   const onPath = useMemo(() => new Set(path), [path]);
@@ -58,18 +58,6 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
       x: Math.min(cols + 0.4, Math.max(-0.4, ((x - b.left) / b.width) * cols)),
       y: Math.min(rows + 0.4, Math.max(-0.4, ((y - b.top) / b.height) * rows)),
     };
-  };
-
-  /** Why the head can't step onto `cell` (for a one-line explanation), or null. */
-  const blockedReason = (p: ZapState, cell: number): string | null => {
-    const h = p[p.length - 1];
-    const adjacent = Math.abs(Math.floor(h / cols) - Math.floor(cell / cols)) + Math.abs((h % cols) - (cell % cols)) === 1;
-    if (!adjacent || p.includes(cell)) return null;
-    if (walls.has(wallKey(h, cell))) return "A wall blocks that way. Go around it.";
-    if (numbers[h] === K && nextNumber(puzzle, p) > K) return `Fill every cell before finishing on ${K}. Drag back to free up the path.`;
-    const k = numbers[cell];
-    if (k && k !== nextNumber(puzzle, p)) return `Reach ${nextNumber(puzzle, p)} before ${k}.`;
-    return null;
   };
 
   /** Add a step and give it a sound: rising pitch, chime on checkpoints. */
@@ -122,18 +110,9 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
           break;
         }
       }
-      if (!moved) {
-        const d = drag.current;
-        const [dr, dc] = options[0];
-        const r = hr + dr;
-        const c = hc + dc;
-        const why = r >= 0 && r < rows && c >= 0 && c < cols ? blockedReason(cur, r * cols + c) : null;
-        if (why && d && !d.warned) {
-          d.warned = true;
-          say(why, true);
-        }
-        break;
-      }
+      // A wall or a number out of order: the path simply doesn't go there. That's not
+      // an error; the only error is a real dead end, which the shell reports.
+      if (!moved) break;
     }
     return cur;
   };
@@ -195,11 +174,11 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
       start = push(state, cell);
     }
     if (!start) {
-      say(blockedReason(state, cell) ?? "Draw from the end of your path, or tap a cell on it to go back there.");
+      say("Draw from the end of your path, or tap a cell on it to go back there.");
       return;
     }
     e.currentTarget.setPointerCapture(e.pointerId);
-    drag.current = { id: e.pointerId, warned: false };
+    drag.current = { id: e.pointerId };
     liveRef.current = start;
     pointer.current = toGrid(e.clientX, e.clientY);
     setLive(start);
@@ -253,10 +232,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
     const t = r * cols + c;
     if (state.length >= 2 && state[state.length - 2] === t) apply(state.slice(0, -1), { sound: "tap" });
     else if (canStep(puzzle, state, t, walls)) apply(push(state, t), { sound: "none" });
-    else {
-      const why = blockedReason(state, t);
-      if (why) say(why, true);
-    }
+    else sfx.tap();
   };
 
   const points = path.map((cell) => `${(cell % cols) + 0.5},${Math.floor(cell / cols) + 0.5}`).join(" ");

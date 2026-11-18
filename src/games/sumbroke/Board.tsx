@@ -48,7 +48,6 @@ export function Board({ puzzle, state: grid, apply, interactive, mark: hint, dea
   const [dragging, setDragging] = useState<number | null>(null);
   const [dropTarget, setDropTarget] = useState<number | null>(null);
   const [moving, setMoving] = useState<number | null>(null);
-  const [shake, setShake] = useState<{ cell: number; id: number } | null>(null);
   const [focusIdx, setFocusIdx] = useState(0);
 
   // Drop a selection that no longer points at a tile (after undo, reset, hint rewind…)
@@ -68,11 +67,11 @@ export function Board({ puzzle, state: grid, apply, interactive, mark: hint, dea
     return cells[0]?.getBoundingClientRect().width ?? 80;
   };
 
-  const doShake = (cell: number) => {
-    sfx.error();
-    setShake({ cell, id: Date.now() });
-    window.setTimeout(() => setShake((s) => (s && s.cell === cell ? null : s)), 340);
-  };
+  /**
+   * A merge that isn't allowed is not an error: the tile just slides back with a soft
+   * tap. The only error is the real dead end (no merges left), which the shell reports.
+   */
+  const refuse = () => sfx.tap();
 
   /** Slide the tile onto its neighbour, then commit the merge. */
   const animateTo = (from: number, to: number) => {
@@ -179,7 +178,7 @@ export function Board({ puzzle, state: grid, apply, interactive, mark: hint, dea
     if (!cancelled && d.target !== null && canMerge(grid, d.from, d.target, cols)) {
       animateTo(d.from, d.target);
     } else {
-      if (!cancelled && d.target !== null) doShake(d.target);
+      if (!cancelled && d.target !== null) refuse();
       snapBack(d.from);
     }
   };
@@ -206,7 +205,7 @@ export function Board({ puzzle, state: grid, apply, interactive, mark: hint, dea
           focusCell(nb);
           animateTo(s, nb);
         } else if (grid[nb] !== 0) {
-          doShake(nb);
+          refuse();
         }
       } else {
         focusCell(nb);
@@ -249,7 +248,6 @@ export function Board({ puzzle, state: grid, apply, interactive, mark: hint, dea
           dragging === i && "dragging",
           moving === i && "moving",
           dropTarget === i && dragging !== null && canMerge(grid, dragging, i, cols) && "drop-ok",
-          shake?.cell === i && "shake",
           hint?.from === i && "hint-from",
           hint?.to === i && "hint-to",
           flagged.has(i) && "flagged",
