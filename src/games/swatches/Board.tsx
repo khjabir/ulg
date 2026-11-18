@@ -69,6 +69,10 @@ type Drag = {
   anchor: number;
   rowAxis: Axis;
   colAxis: Axis;
+  /** The last accepted rectangle, and the row and column that produced it. */
+  rect: Rect;
+  row: number;
+  col: number;
 };
 
 export function Board({ puzzle, state, apply, interactive, won, mark, dealing, say, flagged }: BoardProps<SwatchesPuzzle, SwatchesState, number[]>) {
@@ -88,16 +92,38 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
   const cellAt = (x: number, y: number) => (gridRef.current ? cellFromPoint(gridRef.current, x, y, rows, cols) : null);
   const swatchAt = (cell: number) => state.find((r) => inRect(r, Math.floor(cell / cols), cell % cols));
 
-  /** The rectangle a drag covers with its cursor at `at`. */
+  /**
+   * Move a drag to the cell under the finger and return the rectangle it now covers.
+   * A swatch can hold only one clue, so the drag never takes in a second one: it
+   * tries the whole move, then the move along one direction only (so you can still
+   * slide along the clue's edge), and otherwise stops where it was. Pulling back
+   * works as usual.
+   */
   const rectFor = (d: Drag, at: number): Rect => {
-    if (d.editing) return rectOf(d.anchor, at, cols);
     const row = Math.floor(at / cols);
     const col = at % cols;
-    reach(d.rowAxis, row);
-    reach(d.colAxis, col);
-    const [r0, r1] = span(d.rowAxis, row);
-    const [c0, c1] = span(d.colAxis, col);
-    return { r0, c0, r1, c1 };
+    const tries: [number, number][] = [
+      [row, col],
+      [row, d.col],
+      [d.row, col],
+    ];
+    for (const [r, c] of tries) {
+      const rowAxis = { ...d.rowAxis };
+      const colAxis = { ...d.colAxis };
+      let rect: Rect;
+      if (d.editing) rect = rectOf(d.anchor, r * cols + c, cols);
+      else {
+        reach(rowAxis, r);
+        reach(colAxis, c);
+        const [r0, r1] = span(rowAxis, r);
+        const [c0, c1] = span(colAxis, c);
+        rect = { r0, c0, r1, c1 };
+      }
+      if (clueIn(puzzle, rect) === -2) continue;
+      Object.assign(d, { rowAxis, colAxis, row: r, col: c, rect });
+      return rect;
+    }
+    return d.rect;
   };
 
   const commit = (rect: Rect, tapped: boolean, editing: Rect | null = null) => {
@@ -112,11 +138,11 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
     const k = clueIn(puzzle, rect);
     if (k === -1) {
       if (tapped) say("Drag across the cells to draw a swatch around a clue.");
-      else say(editing ? "A swatch needs a clue inside it, so the old one stays." : "A swatch needs a clue inside it.", true);
+      else say(editing ? "A swatch needs a clue inside it, so the old one stays." : "A swatch needs a clue inside it.");
       return;
     }
     if (k === -2) {
-      say(editing ? "A swatch can hold only one clue, so the old one stays." : "A swatch can hold only one clue.", true);
+      say(editing ? "A swatch can hold only one clue, so the old one stays." : "A swatch can hold only one clue.");
       return;
     }
     if (editing && sameRect(editing, rect)) return;
@@ -164,6 +190,9 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
       anchor: grabbed ? farCorner(grabbed, cell) : cell,
       rowAxis: axisAt(Math.floor(cell / cols)),
       colAxis: axisAt(cell % cols),
+      rect: grabbed ?? rectOf(cell, cell, cols),
+      row: Math.floor(cell / cols),
+      col: cell % cols,
     };
     drag.current = d;
     setKeyboard(false);

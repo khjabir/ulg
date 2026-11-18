@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   APP_VERSION,
   BUILD_DATE,
   applyUpdate,
   checkForUpdates,
+  hideSplash,
   promptInstall,
   startApp,
   useApp,
@@ -18,9 +19,12 @@ const LOGO = `${process.env.NEXT_PUBLIC_RELATIVE_ASSETS === "1" ? "." : (process
 const CARD_KEY = "ulg:v1:install-card";
 const CARD_SNOOZE = 14 * 24 * 3600 * 1000;
 
-/** Mounted once in the layout: starts install/update handling and shows the update banner. */
+/** Mounted once in the layout: starts install/update handling, lifts the splash, shows the update banner. */
 export function AppRuntime() {
-  useEffect(() => startApp(), []);
+  useEffect(() => {
+    startApp();
+    hideSplash();
+  }, []);
   return <UpdateBanner />;
 }
 
@@ -61,10 +65,20 @@ function UpdateBanner() {
 
 const canInstallHere = (app: AppState) => !app.standalone && (app.canPrompt || app.platform !== "desktop");
 
-/** The home screen's "Get the app" card, until installed or dismissed for two weeks. */
+/** An indeterminate progress bar: the browser doesn't say how far along it is. */
+const Busy = ({ label }: { label: string }) => <span className="busy-bar" role="progressbar" aria-label={label} />;
+
+/**
+ * The home screen's "Get the app" card. It shows the install button (or the steps),
+ * then "Installing…" with a progress bar while the browser adds the app, then
+ * "Installed" for a few seconds, and after that it's gone for good. "Not now" hides
+ * it for two weeks.
+ */
 export function InstallCard({ onHowTo }: { onHowTo: () => void }) {
   const app = useApp();
   const [hidden, setHidden] = useState(true);
+  const [justInstalled, setJustInstalled] = useState(false);
+  const before = useRef<AppState["install"] | null>(null);
   useEffect(() => {
     try {
       const at = Number(localStorage.getItem(CARD_KEY) ?? 0);
@@ -73,7 +87,50 @@ export function InstallCard({ onHowTo }: { onHowTo: () => void }) {
       setHidden(false);
     }
   }, []);
-  if (!app.ready || hidden || !canInstallHere(app)) return null;
+  // Celebrate only an install that happens now, not the state found on opening.
+  useEffect(() => {
+    if (!app.ready) return;
+    const was = before.current;
+    before.current = app.install;
+    if (was === null || was === "installed" || app.install !== "installed") return;
+    setJustInstalled(true);
+    const t = window.setTimeout(() => setJustInstalled(false), 6000);
+    return () => window.clearTimeout(t);
+  }, [app.install, app.ready]);
+
+  if (!app.ready || app.standalone) return null;
+  if (app.install === "installing") {
+    return (
+      <section className="install-card busy" aria-live="polite" aria-label="Installing the app">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={LOGO} alt="" width={52} height={52} />
+        <span className="install-text">
+          <b>Installing ULG…</b>
+          <span>Your browser is adding it to your home screen. This takes a few seconds.</span>
+          <Busy label="Installing" />
+        </span>
+      </section>
+    );
+  }
+  if (app.install === "installed") {
+    if (!justInstalled) return null;
+    return (
+      <section className="install-card done" aria-live="polite" aria-label="App installed">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={LOGO} alt="" width={52} height={52} />
+        <span className="install-text">
+          <b>
+            <CheckIcon /> ULG is installed
+          </b>
+          <span>Open it from your home screen to play full screen.</span>
+        </span>
+        <button type="button" className="install-close" aria-label="Close" onClick={() => setJustInstalled(false)}>
+          <CloseIcon />
+        </button>
+      </section>
+    );
+  }
+  if (hidden || !canInstallHere(app)) return null;
   const dismiss = () => {
     setHidden(true);
     try {
@@ -111,6 +168,21 @@ function InstallSteps({ app }: { app: AppState }) {
     return (
       <p className="menu-line ok">
         <CheckIcon /> Installed. You&rsquo;re playing the app.
+      </p>
+    );
+  }
+  if (app.install === "installing") {
+    return (
+      <>
+        <p className="menu-line">Installing ULG… your browser is adding it to your home screen.</p>
+        <Busy label="Installing" />
+      </>
+    );
+  }
+  if (app.install === "installed") {
+    return (
+      <p className="menu-line ok">
+        <CheckIcon /> Installed. Open ULG from your home screen to play full screen.
       </p>
     );
   }
@@ -187,7 +259,7 @@ export function AppMenu({ open, onOpenChange }: { open: boolean; onOpenChange: (
       </button>
       <Dialog open={open} onClose={() => onOpenChange(false)} title="ULG" label="App menu" className="app-menu">
         <section>
-          <h3>{app.standalone ? "App" : "Install the app"}</h3>
+          <h3>{app.standalone || app.install === "installed" ? "App" : "Install the app"}</h3>
           <InstallSteps app={app} />
         </section>
         <section>

@@ -32,6 +32,8 @@ declare global {
 }
 
 export type Platform = "ios" | "android" | "desktop";
+/** idle: not installed (as far as we know); installing: accepted, the browser is adding it; installed: done. */
+export type InstallState = "idle" | "installing" | "installed";
 export type UpdateState = "idle" | "checking" | "downloading" | "ready" | "latest" | "offline" | "unavailable";
 
 export interface AppState {
@@ -41,6 +43,7 @@ export interface AppState {
   platform: Platform;
   /** The browser offered an install prompt we can show. */
   canPrompt: boolean;
+  install: InstallState;
   update: UpdateState;
 }
 
@@ -48,7 +51,24 @@ const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 export const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "dev";
 export const BUILD_DATE = process.env.NEXT_PUBLIC_BUILD_DATE ?? "";
 
-const SERVER: AppState = { ready: false, standalone: false, platform: "desktop", canPrompt: false, update: "idle" };
+const SERVER: AppState = { ready: false, standalone: false, platform: "desktop", canPrompt: false, install: "idle", update: "idle" };
+const INSTALLED_KEY = "ulg:v1:installed";
+
+function rememberInstalled(on: boolean) {
+  try {
+    if (on) localStorage.setItem(INSTALLED_KEY, "1");
+    else localStorage.removeItem(INSTALLED_KEY);
+  } catch {
+    /* private mode */
+  }
+}
+const wasInstalled = () => {
+  try {
+    return localStorage.getItem(INSTALLED_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
 let state: AppState = SERVER;
 const listeners = new Set<() => void>();
 const set = (patch: Partial<AppState>) => {
@@ -134,22 +154,43 @@ async function startUpdates() {
 export function startApp() {
   if (started || typeof window === "undefined") return;
   started = true;
-  set({ ready: true, standalone: isStandalone(), platform: detectPlatform(), canPrompt: !!window.__ulgInstall });
-  window.addEventListener("ulg-installable", () => set({ canPrompt: !!window.__ulgInstall }));
+  const standalone = isStandalone();
+  if (standalone) rememberInstalled(true);
+  // The browser only offers to install an app that isn't installed: if it offers,
+  // forget an old "installed" note (the player must have removed the app).
+  const offered = !!window.__ulgInstall;
+  if (offered) rememberInstalled(false);
+  set({
+    ready: true,
+    standalone,
+    platform: detectPlatform(),
+    canPrompt: offered,
+    install: standalone || (!offered && wasInstalled()) ? "installed" : "idle",
+  });
+  const offer = () => {
+    rememberInstalled(false);
+    set({ canPrompt: true, install: state.install === "installing" ? "installing" : "idle" });
+  };
+  window.addEventListener("ulg-installable", () => window.__ulgInstall && offer());
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     window.__ulgInstall = e as InstallPrompt;
-    set({ canPrompt: true });
+    offer();
   });
   window.addEventListener("appinstalled", () => {
     window.__ulgInstall = null;
-    set({ canPrompt: false });
+    rememberInstalled(true);
+    set({ canPrompt: false, install: "installed" });
   });
   window.matchMedia("(display-mode: standalone)").addEventListener("change", () => set({ standalone: isStandalone() }));
   void startUpdates();
 }
 
-/** Show the browser's install dialog. Resolves true when the player installs. */
+/**
+ * Show the browser's install dialog. If the player accepts, the app shows
+ * "Installing…" until the browser says it's done (`appinstalled`). Some browsers
+ * never say, so after 30 s we take the player's yes as done.
+ */
 export async function promptInstall(): Promise<boolean> {
   const p = window.__ulgInstall;
   if (!p) return false;
@@ -157,7 +198,16 @@ export async function promptInstall(): Promise<boolean> {
   set({ canPrompt: false });
   await p.prompt();
   const { outcome } = await p.userChoice;
-  return outcome === "accepted";
+  if (outcome !== "accepted") return false;
+  if (state.install !== "installed") {
+    set({ install: "installing" });
+    window.setTimeout(() => {
+      if (state.install !== "installing") return;
+      rememberInstalled(true);
+      set({ install: "installed" });
+    }, 30_000);
+  }
+  return true;
 }
 
 /** Look for a new version now (the menu's "Check for updates"). */
@@ -196,4 +246,39 @@ export function applyUpdate() {
   }
   updateRequested = true;
   waiting.postMessage({ type: "SKIP_WAITING" });
+}
+
+/* ---------------- Splash screen ---------------- */
+
+const SPLASH_MIN_MS = 900;
+let splashDone: (() => void) | null = null;
+const splashGone = typeof window === "undefined" ? Promise.resolve() : new Promise<void>((r) => (splashDone = r));
+
+/** Resolves once the splash screen has gone (at once if there isn't one). */
+export const afterSplash = () => splashGone;
+
+/**
+ * The splash is plain HTML in the layout, so it shows before any script runs. Lift
+ * it once the app is ready and it has been up for a moment. It is only hidden, never
+ * removed, because React owns that element.
+ */
+export function hideSplash() {
+  const el = document.getElementById("splash");
+  const finish = () => {
+    el?.classList.add("gone");
+    splashDone?.();
+    splashDone = null;
+  };
+  if (!el || document.documentElement.classList.contains("no-splash")) {
+    finish();
+    return;
+  }
+  window.setTimeout(
+    () => {
+      el.classList.add("leaving");
+      el.addEventListener("animationend", finish, { once: true });
+      window.setTimeout(finish, 600); // in case the animation never runs
+    },
+    Math.max(0, SPLASH_MIN_MS - performance.now()),
+  );
 }

@@ -78,17 +78,32 @@ const onVercel = process.env.VERCEL === "1";
 // Browsers can offer the install prompt before React has loaded: keep it for the Install button.
 const CATCH_INSTALL = `window.__ulgInstall=null;addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__ulgInstall=e;dispatchEvent(new Event("ulg-installable"))});`;
 
+// The splash screen shows once per launch: a reload in the same session skips it.
+const SPLASH_ONCE = `try{if(sessionStorage.getItem("ulg:splash"))document.documentElement.classList.add("no-splash");else sessionStorage.setItem("ulg:splash","1")}catch(e){}`;
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={archivo.variable}>
+    // The splash script may add a class to <html> before React loads.
+    <html lang="en" className={archivo.variable} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: CATCH_INSTALL }} />
+        <script dangerouslySetInnerHTML={{ __html: SPLASH_ONCE + CATCH_INSTALL }} />
       </head>
       <body>
+        <div id="splash" aria-hidden="true">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="splash-logo" src={`${base}/logo.svg`} alt="" width={160} height={160} />
+          <span className="splash-word">
+            {["U", "L", "G"].map((ch, i) => (
+              <span key={ch} className="splash-tile" style={{ "--i": i } as React.CSSProperties}>
+                {ch}
+              </span>
+            ))}
+          </span>
+        </div>
         {children}
         <AppRuntime />
         {onVercel && <Analytics />}

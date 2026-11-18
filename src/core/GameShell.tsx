@@ -21,6 +21,7 @@ import { formatTime } from "./format";
 import { Dialog } from "./Dialog";
 import { Confetti } from "./Confetti";
 import { onSoundChange, setSoundOn, sfx, soundOn } from "./sound";
+import { afterSplash } from "./app";
 import {
   BackIcon,
   HelpIcon,
@@ -195,11 +196,19 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
     setStats(loadStats(def.id, levelIds));
     setSound(soundOn());
     const offSound = onSoundChange(setSound);
+    // First visit: show the rules, once the splash screen has gone.
+    let alive = true;
     if (!hasSeenHelp(def.id)) {
-      setDialog("help");
-      markHelpSeen(def.id);
+      void afterSplash().then(() => {
+        if (!alive) return;
+        setDialog("help");
+        markHelpSeen(def.id);
+      });
     }
-    return offSound;
+    return () => {
+      alive = false;
+      offSound();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
