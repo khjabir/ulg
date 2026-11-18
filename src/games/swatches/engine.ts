@@ -255,8 +255,10 @@ export function mismatch(p: SwatchesPuzzle, rect: Rect): string | null {
 }
 
 /**
- * A swatch that breaks its clue, else a clue with no room left for any swatch, else
- * empty cells that no remaining clue could ever cover.
+ * A swatch that breaks its own clue (wrong size or shape), else the end of the road:
+ * every clue has a swatch but cells are still empty, or no clue left can fit
+ * anywhere. Never looks ahead: a swatch that fits its clue is never flagged just
+ * because it will crowd another one later.
  */
 export function check(p: SwatchesPuzzle, s: SwatchesState): Problem | null {
   const { rows, cols, clues } = p;
@@ -266,27 +268,27 @@ export function check(p: SwatchesPuzzle, s: SwatchesState): Problem | null {
   }
   const covered = new Uint8Array(rows * cols);
   for (const r of s) for (const c of rectCells(r, cols)) covered[c] = 1;
-  const reach = new Uint8Array(rows * cols);
-  for (let k = 0; k < clues.length; k++) {
-    if (covered[clues[k].cell]) continue;
-    const room = candidatesFor(p, k).filter((r) => rectCells(r, cols).every((c) => !covered[c]));
-    if (!room.length) {
-      return {
-        kind: "stuck",
-        message: "There's no room left for this clue's swatch. Move or shrink a swatch next to it.",
-        cells: [clues[k].cell],
-      };
-    }
-    for (const r of room) for (const c of rectCells(r, cols)) reach[c] = 1;
-  }
-  const orphans: number[] = [];
-  for (let i = 0; i < rows * cols; i++) if (!covered[i] && !reach[i]) orphans.push(i);
-  if (orphans.length) {
-    const one = orphans.length === 1;
+  const empty: number[] = [];
+  for (let i = 0; i < rows * cols; i++) if (!covered[i]) empty.push(i);
+  if (!empty.length) return null;
+  const waiting = clues.map((_, k) => k).filter((k) => !covered[clues[k].cell]);
+  if (!waiting.length) {
+    const one = empty.length === 1;
     return {
       kind: "stuck",
-      message: `No swatch can reach ${one ? "this cell" : "these cells"} any more, so ${one ? "it" : "they"} can't be covered. Move a swatch to make room.`,
-      cells: orphans,
+      message: `Every clue has a swatch, but ${one ? "1 cell is" : `${empty.length} cells are`} still empty. Resize a swatch to cover ${one ? "it" : "them"}.`,
+      cells: empty,
+    };
+  }
+  const fits = (k: number) => candidatesFor(p, k).some((r) => rectCells(r, cols).every((c) => !covered[c]));
+  if (!waiting.some(fits)) {
+    return {
+      kind: "stuck",
+      message:
+        waiting.length === 1
+          ? "There's no room left for the last clue's swatch. Move or resize a swatch to make space."
+          : "None of the clues left has room for its swatch. Move or resize a swatch to make space.",
+      cells: waiting.map((k) => clues[k].cell),
     };
   }
   return null;

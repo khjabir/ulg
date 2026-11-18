@@ -184,8 +184,8 @@ export function conflicts(p: KingsPuzzle, s: KingsState): Set<number> {
 }
 
 /**
- * The first broken rule (two kings in one line or colour, or touching), else a row,
- * column or colour that still needs a king but has no cell left for one.
+ * The first broken rule (two kings in one line or colour, or touching), else the
+ * dead end where no cell is left for the kings still missing. Never looks ahead.
  */
 export function check(p: KingsPuzzle, s: KingsState): Problem | null {
   const { n, regions } = p;
@@ -207,29 +207,28 @@ export function check(p: KingsPuzzle, s: KingsState): Problem | null {
     }
   }
 
-  const blocked = (i: number) =>
-    s[i] === MARK ||
-    kings.some(
-      (k) =>
-        row(k) === row(i) ||
-        col(k) === col(i) ||
-        regions[k] === regions[i] ||
-        (Math.abs(row(k) - row(i)) <= 1 && Math.abs(col(k) - col(i)) <= 1),
+  // Stuck for real: kings are still missing, yet every free cell is in line with,
+  // in the colour of, or next to a king. (X marks are your notes, so they don't count.)
+  if (kings.length < n) {
+    const open = s.some(
+      (v, i) =>
+        v !== KING &&
+        !kings.some(
+          (k) =>
+            row(k) === row(i) ||
+            col(k) === col(i) ||
+            regions[k] === regions[i] ||
+            (Math.abs(row(k) - row(i)) <= 1 && Math.abs(col(k) - col(i)) <= 1),
+        ),
     );
-  const units: { name: string; cells: number[] }[] = [];
-  for (let r = 0; r < n; r++) units.push({ name: "row", cells: range(n).map((c) => r * n + c) });
-  for (let c = 0; c < n; c++) units.push({ name: "column", cells: range(n).map((r) => r * n + c) });
-  const byRegion = new Map<number, number[]>();
-  regions.forEach((g, i) => byRegion.set(g, [...(byRegion.get(g) ?? []), i]));
-  for (const cells of byRegion.values()) units.push({ name: "colour", cells });
-
-  for (const u of units) {
-    if (u.cells.some((i) => s[i] === KING)) continue;
-    if (!u.cells.every(blocked)) continue;
-    const message = u.cells.every((i) => s[i] === MARK)
-      ? `Every cell in this ${u.name} is crossed out, but it still needs a king. Clear an X.`
-      : `There's no room left for a king in this ${u.name}. Move a king or clear an X.`;
-    return { kind: "stuck", message, cells: u.cells };
+    if (!open) {
+      const missing = n - kings.length;
+      return {
+        kind: "stuck",
+        message: `No cell is left where a king can go, but ${missing === 1 ? "1 more is" : `${missing} more are`} needed. Move a king, or undo.`,
+        cells: kings,
+      };
+    }
   }
   return null;
 }

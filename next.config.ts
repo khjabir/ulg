@@ -1,4 +1,9 @@
+import { readFileSync } from "node:fs";
 import type { NextConfig } from "next";
+
+// Shown in the app menu, so players can tell which version they're on.
+const version = (JSON.parse(readFileSync("package.json", "utf8")) as { version?: string }).version ?? "0.0.0";
+const builtOn = new Date().toISOString().slice(0, 10);
 
 // Set BASE_PATH=/repo-name when hosting under a sub-path (e.g. GitHub Pages project sites).
 const basePath = process.env.BASE_PATH ?? "";
@@ -15,6 +20,8 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_BASE_PATH: basePath,
     NEXT_PUBLIC_RELATIVE_ASSETS: relative ? "1" : "",
+    NEXT_PUBLIC_APP_VERSION: version,
+    NEXT_PUBLIC_BUILD_DATE: builtOn,
   },
 };
 

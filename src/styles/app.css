@@ -1,0 +1,253 @@
+/* ---------------- Feels like an app ---------------- */
+
+/* No text selection, long-press menus or double-tap zoom while playing. */
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+button,
+a,
+[role="application"] {
+  touch-action: manipulation;
+}
+
+img {
+  -webkit-user-drag: none;
+}
+
+/* Dialog text (rules, menu) can still be selected. */
+dialog {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.btn.small {
+  padding: 8px 14px;
+  font-size: 14px;
+  gap: 6px;
+}
+
+.btn.small svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn.accent {
+  background: var(--focus);
+  border-color: var(--focus);
+  color: #1d1a10;
+  font-weight: 700;
+}
+
+/* ---------------- Install card (home screen) ---------------- */
+
+.install-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 40px 14px 14px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #1f5f5b, #173f3c);
+  color: #fff8e8;
+  box-shadow: 0 10px 24px -14px rgba(10, 40, 38, 0.7);
+  animation: rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) 250ms both;
+}
+
+.install-card img {
+  width: 52px;
+  height: 52px;
+  border-radius: 13px;
+  box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.5);
+}
+
+.install-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.install-text b {
+  font-size: 16px;
+  font-weight: 800;
+  font-stretch: 112%;
+}
+
+.install-text span {
+  font-size: 13px;
+  line-height: 1.35;
+  color: rgba(255, 248, 232, 0.78);
+}
+
+.install-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+  cursor: pointer;
+}
+
+.install-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Phones: the button sits under the text, so the text gets the full width. */
+@media (max-width: 480px) {
+  .install-card {
+    grid-template-columns: 52px 1fr;
+    align-items: start;
+  }
+  .install-card .btn {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+/* ---------------- Update banner (every screen) ---------------- */
+
+.update-banner {
+  position: fixed;
+  z-index: 50;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  translate: -50% 0;
+  width: min(calc(100% - 24px), 480px);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 12px 12px 12px 14px;
+  border-radius: 18px;
+  background: var(--primary);
+  color: var(--primary-ink);
+  box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.5);
+  animation: banner-in 420ms cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+
+@keyframes banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+.update-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--focus) 85%, transparent);
+  color: #1d1a10;
+}
+
+.update-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.update-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.update-text b {
+  font-size: 15px;
+}
+
+.update-text span {
+  opacity: 0.75;
+}
+
+.update-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.update-banner .btn.ghost {
+  color: inherit;
+  border-color: color-mix(in srgb, var(--primary-ink) 25%, transparent);
+  background: transparent;
+}
+
+/* ---------------- App menu ---------------- */
+
+.app-menu section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.app-menu h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.menu-line {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.menu-line svg {
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  vertical-align: -3px;
+}
+
+.menu-line.ok {
+  color: var(--felt, #2d8a5f);
+  font-weight: 600;
+}
+
+.menu-line .muted {
+  color: var(--ink-soft);
+}
+
+.steps {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px 2px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--button);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.key svg {
+  width: 16px;
+  height: 16px;
+}

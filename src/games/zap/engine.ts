@@ -283,97 +283,31 @@ export function isSolved(p: ZapPuzzle, path: ZapState): boolean {
 }
 
 /**
- * Dead ends, in the order a player would want to hear about them. Everything here is
- * provable from the board alone: the path is finished too early, can't move, has cut
- * cells off, can't reach the next number, or has left a cell with only one way in.
+ * The two ways a path gets stuck: it ended on the last number with cells still
+ * empty, or its end can't move anywhere. Never looks ahead.
  */
 export function check(p: ZapPuzzle, path: ZapState): Problem | null {
-  const { rows, cols } = p;
-  const n = rows * cols;
+  const n = p.rows * p.cols;
   if (path.length >= n) return null;
   const K = lastNumber(p);
   const head = path[path.length - 1];
   const walls = new Set(p.walls.map(([a, b]) => wallKey(a, b)));
-  const on = new Uint8Array(n);
-  for (const c of path) on[c] = 1;
-  const free: number[] = [];
-  for (let i = 0; i < n; i++) if (!on[i]) free.push(i);
-  const left = free.length;
-  const cellsWord = (k: number) => (k === 1 ? "1 cell is" : `${k} cells are`);
-  const links = (i: number) => neighbours4(i, rows, cols).filter((q) => !walls.has(wallKey(i, q)));
-  const next = nextNumber(p, path);
-
-  if (p.numbers[head] === K && next > K) {
+  const on = new Set(path);
+  const empty: number[] = [];
+  for (let i = 0; i < n; i++) if (!on.has(i)) empty.push(i);
+  const left = empty.length === 1 ? "1 cell is" : `${empty.length} cells are`;
+  if (p.numbers[head] === K && nextNumber(p, path) > K) {
     return {
       kind: "stuck",
-      message: `The path ends on ${K}, but ${cellsWord(left)} still empty. Back up and take a longer way round.`,
-      cells: free,
+      message: `The path ends on ${K}, but ${left} still empty. Back up and take a longer way round.`,
+      cells: empty,
     };
   }
-
-  if (!links(head).some((q) => canStep(p, path, q, walls))) {
+  if (!neighbours4(head, p.rows, p.cols).some((q) => canStep(p, path, q, walls))) {
     return {
       kind: "stuck",
-      message: "Dead end: the path can't go anywhere from here. Drag back along it, or undo.",
+      message: `Dead end: the path can't go any further, and ${left} still empty. Drag back along it, or undo.`,
       cells: [head],
-    };
-  }
-
-  // Free cells the path can still reach. The last number ends the path, so nothing
-  // beyond it counts as reachable.
-  const seen = new Uint8Array(n);
-  const stack = [head];
-  seen[head] = 1;
-  while (stack.length) {
-    const c = stack.pop()!;
-    if (c !== head && p.numbers[c] === K) continue;
-    for (const q of links(c)) {
-      if (!seen[q] && !on[q]) {
-        seen[q] = 1;
-        stack.push(q);
-      }
-    }
-  }
-  const cutOff = free.filter((c) => !seen[c]);
-  if (cutOff.length) {
-    return {
-      kind: "stuck",
-      message: `${cutOff.length === 1 ? "This cell is" : "These cells are"} cut off, so the path can't fill ${cutOff.length === 1 ? "it" : "them"}. Back up and leave a way through.`,
-      cells: cutOff,
-    };
-  }
-
-  // The next number must be reachable without crossing a later one.
-  const target = p.numbers.indexOf(next);
-  if (target >= 0 && !on[target]) {
-    const seen2 = new Uint8Array(n);
-    const todo = [head];
-    seen2[head] = 1;
-    while (todo.length) {
-      const c = todo.pop()!;
-      for (const q of links(c)) {
-        if (seen2[q] || on[q] || (p.numbers[q] && q !== target)) continue;
-        seen2[q] = 1;
-        todo.push(q);
-      }
-    }
-    if (!seen2[target]) {
-      return {
-        kind: "stuck",
-        message: `The path can't reach ${next} now without crossing a later number. Back up and go another way.`,
-        cells: [target],
-      };
-    }
-  }
-
-  // Every empty cell except the last number needs a way in and a way out.
-  const end = p.numbers.indexOf(K);
-  const pinched = free.filter((c) => c !== end && links(c).filter((q) => !on[q] || q === head).length < 2);
-  if (pinched.length) {
-    return {
-      kind: "stuck",
-      message: `The path could get into ${pinched.length === 1 ? "this cell" : "these cells"} but never out again. Back up and pass through ${pinched.length === 1 ? "it" : "them"}.`,
-      cells: pinched,
     };
   }
   return null;

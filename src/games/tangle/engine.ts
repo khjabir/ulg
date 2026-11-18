@@ -197,7 +197,7 @@ export function errors(p: TanglePuzzle, s: TangleState): TangleErrors {
 
 const pieceName = (v: number, many = false) => (v === SUN ? (many ? "suns" : "sun") : many ? "moons" : "moon");
 
-/** The first broken rule, said plainly, else an empty cell where neither piece fits. */
+/** The first broken rule, said plainly. A full board with no broken rule is solved. */
 export function check(p: TanglePuzzle, s: TangleState): Problem | null {
   for (let r = 0; r < N; r++) {
     for (let c = 0; c < N; c++) {
@@ -240,15 +240,6 @@ export function check(p: TanglePuzzle, s: TangleState): Problem | null {
         cells: [sg.a, sg.b],
       };
     }
-  }
-  const at = signIndex(p.signs);
-  for (let i = 0; i < N * N; i++) {
-    if (s[i] || !(breaks(s, i, SUN, at) && breaks(s, i, MOON, at))) continue;
-    return {
-      kind: "stuck",
-      message: "Neither a sun nor a moon can go here without breaking a rule. Something nearby has to change.",
-      cells: [i],
-    };
   }
   return null;
 }

@@ -75,20 +75,20 @@ Every game sets its own levels. Today's games each have three:
 ## Why it's fun to play
 
 - **It never runs out.** Tap *New puzzle* and a fresh board appears. A generator built for each game guarantees there's exactly one solution, so you never have to guess.
-- **It tells you when you're stuck.** Break a rule or paint yourself into a corner, and the game says what went wrong and rings the cells involved. That covers a Zap path that has cut cells off, a Sumbroke tile that can never merge again, a Kings row with no room left, and more. It speaks up the moment it happens, not after you've filled the board.
+- **It tells you when something's wrong, and only then.** If a piece breaks its own rule (a 5 that isn't 5 cells, two kings in one row), the game names the rule and rings the piece. If you hit a real dead end (a Zap path that can't move, a Sumbroke board with no merges left), it says so and suggests a way back. It never looks ahead or gives away deductions: working those out is the game.
 - **Hints help, but make you wait.** A hint clears anything that can't be right and shows the next step. In Sumbroke and Zap, it takes you back to your last good position first. The Hint button fills like a progress bar as it recharges: the first hint is ready after 20 seconds of play, and each one after that takes a little longer (up to 90 seconds). That keeps hints for when you're truly stuck.
 - **It feels like a game table.** You get chunky tiles you drag around, wooden clacks, chimes as a path grows, a soft buzz on phones, and a wave of confetti when you solve it.
-- **Drawing is forgiving.** Zap's line follows your finger smoothly. Drags that overshoot the board's edge still land on the edge row. You can grab a swatch and drag its end back and forth to resize it.
+- **Drawing is forgiving.** Zap's line follows your finger smoothly. In Swatches you can start a drag anywhere, even on the clue, and sweep one way and then back the other. You can also grab a drawn swatch by its edge to resize it. Drags that overshoot the board's edge still land on the edge row.
 - **You can challenge a friend.** Every board has a code, and *Challenge a friend* shares a link that rebuilds exactly the same puzzle.
 - **It keeps your place.** Games in progress, best times, averages and hint-free streaks are all saved on the device.
-- **It works anywhere.** It installs as an app and plays offline. It supports dark mode and full keyboard play, and it respects reduced motion.
+- **It's a real app.** Install it from the home screen card or the ⋯ menu and it opens full screen with its own icon and launch screen, and plays offline. When a new version comes out, it asks before updating. It supports dark mode and full keyboard play, and it respects reduced motion.
 
 <p align="center">
-  <img src="docs/screens/stuck-zap.png" width="260" alt="Zap pointing out two cells the path has cut off">
+  <img src="docs/screens/stuck-zap.png" width="260" alt="Zap saying the path has hit a dead end">
   &nbsp;
-  <img src="docs/screens/stuck-sumbroke.png" width="260" alt="Sumbroke pointing out a 4 that can never merge again">
+  <img src="docs/screens/stuck-sumbroke.png" width="260" alt="Sumbroke saying no moves are left">
 </p>
-<p align="center"><sub>Stuck? The game says why, the moment it happens</sub></p>
+<p align="center"><sub>Truly stuck? The game says so and shows you where</sub></p>
 
 <p align="center">
   <img src="docs/screens/hub.png" width="230" alt="The home screen listing every game">
@@ -125,12 +125,31 @@ npm start          # preview out/ locally
 | Netlify or Cloudflare Pages | Build command `npm run build`, publish directory `out` |
 | GitHub Pages | `BASE_PATH=/your-repo npm run build`, then publish `out/` |
 
-Then open the site on your phone and add it to your home screen:
+### Install it
 
-- **Android (Chrome):** menu, then *Install app*.
-- **iPhone (Safari):** Share, then *Add to Home Screen*.
+Open the site on your phone. A **Get the ULG app** card on the home screen, and the
+**⋯** menu, walk you through installing it:
 
-From then on it plays offline.
+- **Android (Chrome, Edge, Samsung Internet):** tap **Install**.
+- **iPhone and iPad:** tap **Share**, then **Add to Home Screen**. The card's **How?** button shows the steps.
+- **Computer (Chrome or Edge):** click **Install** on the card, or the install button in the address bar.
+
+The installed app opens full screen from its own icon, with a launch screen, shortcuts
+to each game (long-press the icon on Android), and no browser bars. It plays offline.
+
+### Updates
+
+Deploy a new build to the same address and every installed copy picks it up:
+
+1. The app checks for a new version when it opens, when it comes back to the
+   foreground, and every 30 minutes. You can also tap **⋯ → Check for updates**.
+2. The new version downloads in the background, while the current one keeps running.
+3. A banner says **A new version of ULG is ready**. **Update** switches over and
+   reloads. A game in progress picks up exactly where it was. **Later** waits, and the
+   new version applies itself the next time the app is fully closed and reopened.
+
+Bump `version` in `package.json` before you deploy, so the menu shows which version a
+player is on.
 
 > Offline mode only switches on in production builds. Use `npm run build && npm start`
 > to try it on your computer.
@@ -156,10 +175,11 @@ Generation runs in a Web Worker, so the screen never freezes. The puzzle tests g
 hundreds of boards and check that each one is deterministic, has exactly one valid solution,
 and can be solved using hints alone.
 
-After every move, each game also runs a quick `check` for broken rules and dead ends. A
-check only reports what can be proved from the board itself, never peeking at the answer.
-The tests walk every solution step by step to make sure the check stays quiet, then play
-thousands of random games to make sure every board it flags really can't be finished.
+After every move, each game also runs a quick `check`. It reports only a piece that breaks
+its own rule, or a true dead end where no move is left. It never looks ahead, and never
+peeks at the answer. The tests walk every solution step by step to make sure the check
+stays quiet, then play thousands of random games. Every board it flags must really be
+unfinishable, and every real dead end must be caught.
 
 </details>
 
@@ -168,7 +188,7 @@ thousands of random games to make sure every board it flags really can't be fini
 - **Next.js 16** (App Router, static export) with **React 19** and strict **TypeScript**.
 - No backend and no tracking. Everything runs in the browser, and progress lives in `localStorage`.
 - Sound effects are synthesized with the Web Audio API, so the project ships no audio files.
-- A hand-written service worker precaches every page for offline play.
+- A hand-written service worker precaches every page for offline play, and holds each update until the player says go.
 - The only font is Archivo, served from the app itself.
 
 ```
@@ -180,7 +200,7 @@ src/
   games/registry.ts    the list of games on the home screen
   styles/              shared styles plus one stylesheet per game
   worker/              the Web Worker that builds puzzles
-public/                logo, icons, offline service worker
+public/                logo, icons, launch screens, store screenshots, offline service worker
 scripts/               icon and worker builds, service-worker precache, puzzle tests
 docs/                  README images (banner.html is the banner's source)
 ```
@@ -192,7 +212,7 @@ docs/                  README images (banner.html is the banner's source)
 | `npm start` | Serve `out/` locally |
 | `npm test` | Generate puzzles for every game and level, and verify them |
 | `npm run typecheck` | Run the TypeScript checks |
-| `npm run icons` | Redraw the logo and every app icon |
+| `npm run icons` | Redraw the logo, every app icon and the iPhone/iPad launch screens |
 
 ## Add your own game
 
@@ -213,7 +233,7 @@ export const mygame: GameDef<MyPuzzle, MyState, number[]> = {
   isSolved,     // has the player won?
   progress,     // how much is done, for the progress bar
   hint,         // the next step, or a way back to the last good position
-  check,        // optional: a broken rule or a dead end to point out, or null
+  check,        // optional: a piece breaking its own rule, or a true dead end, or null
   hintWait,     // optional: how long the hint takes to recharge (20 s, then 30, 45… by default)
   Board,        // draws the board; calls apply(next) for every move
   HowTo,        // the rules, shown before the first game

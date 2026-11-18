@@ -32,8 +32,9 @@ function HowTo() {
         </li>
       </ul>
       <p className="fine">
-        Drag from one corner to the opposite corner to draw a swatch. Tap a swatch to remove it. Drawing over a swatch replaces it.
-        Swatches that don&rsquo;t match their clue get a red outline. Keyboard: arrows move, Enter starts and finishes a
+        Drag across the cells to draw a swatch. Start anywhere, even on the clue, and sweep one way, then back the other way.
+        Grab the edge of a swatch to resize it, or tap it to remove it. Drawing over a swatch replaces it. A swatch that
+        doesn&rsquo;t match its clue gets a red outline. Keyboard: arrows move, Enter starts and finishes a
         swatch, Delete removes one.
       </p>
     </>

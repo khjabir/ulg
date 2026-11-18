@@ -38,17 +38,46 @@ export function ClueBadge({ size, shape, color }: { size: number | null; shape: 
 }
 
 /**
- * A drag. `anchor` is the fixed corner; `editing` is the swatch being reshaped when
- * the drag started on one (its far corner becomes the anchor, so you resize it by
- * dragging the end you grabbed, back and forth).
+ * One axis of a fresh drag. The side of the start the finger is on follows the
+ * finger (so pulling back shrinks it), while the other side keeps the furthest point
+ * reached. Start on a clue, go up, then sweep down past it: the swatch keeps the top.
  */
-type Drag = { id: number; start: number; anchor: number; cursor: number; moved: boolean; editing: Rect | null };
+type Axis = { start: number; lo: number; hi: number; side: -1 | 0 | 1 };
+const axisAt = (start: number): Axis => ({ start, lo: start, hi: start, side: 0 });
+function reach(a: Axis, at: number) {
+  a.lo = Math.min(a.lo, at);
+  a.hi = Math.max(a.hi, at);
+  if (at !== a.start) a.side = at < a.start ? -1 : 1;
+}
+function span(a: Axis, at: number): [number, number] {
+  if (a.side < 0) return [Math.min(at, a.start), a.hi];
+  if (a.side > 0) return [a.lo, Math.max(at, a.start)];
+  return [a.start, a.start];
+}
+
+/**
+ * A drag. A fresh drag sweeps (see Axis). A drag that starts on a drawn swatch
+ * reshapes it: its far corner (`anchor`) stays put and the end you grabbed follows
+ * your finger, back and forth.
+ */
+type Drag = {
+  id: number;
+  start: number;
+  cursor: number;
+  moved: boolean;
+  editing: Rect | null;
+  anchor: number;
+  rowAxis: Axis;
+  colAxis: Axis;
+};
 
 export function Board({ puzzle, state, apply, interactive, won, mark, dealing, say, flagged }: BoardProps<SwatchesPuzzle, SwatchesState, number[]>) {
   const { rows, cols, clues } = puzzle;
   const gridRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
-  // Rendering copies of the drag (the ref is the source of truth while dragging).
+  // The drag's current rectangle, for drawing (the ref is the source of truth).
+  const [dragRect, setDragRect] = useState<Rect | null>(null);
+  // Keyboard drawing: Enter sets a corner, the arrows move the other.
   const [anchor, setAnchor] = useState<number | null>(null);
   const [cursor, setCursor] = useState<number | null>(null);
   const [focus, setFocus] = useState(0);
@@ -59,8 +88,20 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
   const cellAt = (x: number, y: number) => (gridRef.current ? cellFromPoint(gridRef.current, x, y, rows, cols) : null);
   const swatchAt = (cell: number) => state.find((r) => inRect(r, Math.floor(cell / cols), cell % cols));
 
-  const commit = (a: number, b: number, tapped: boolean, editing: Rect | null = null) => {
-    const existing = editing ?? swatchAt(a);
+  /** The rectangle a drag covers with its cursor at `at`. */
+  const rectFor = (d: Drag, at: number): Rect => {
+    if (d.editing) return rectOf(d.anchor, at, cols);
+    const row = Math.floor(at / cols);
+    const col = at % cols;
+    reach(d.rowAxis, row);
+    reach(d.colAxis, col);
+    const [r0, r1] = span(d.rowAxis, row);
+    const [c0, c1] = span(d.colAxis, col);
+    return { r0, c0, r1, c1 };
+  };
+
+  const commit = (rect: Rect, tapped: boolean, editing: Rect | null = null) => {
+    const existing = editing ?? swatchAt(rect.r0 * cols + rect.c0);
     if (tapped && existing) {
       apply(
         state.filter((r) => r !== existing),
@@ -68,10 +109,9 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
       );
       return;
     }
-    const rect = rectOf(a, b, cols);
     const k = clueIn(puzzle, rect);
     if (k === -1) {
-      if (tapped) say("Drag from one corner to the opposite corner to draw a swatch around a clue.");
+      if (tapped) say("Drag across the cells to draw a swatch around a clue.");
       else say(editing ? "A swatch needs a clue inside it, so the old one stays." : "A swatch needs a clue inside it.", true);
       return;
     }
@@ -87,8 +127,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
 
   const clearDrag = () => {
     drag.current = null;
-    setAnchor(null);
-    setCursor(null);
+    setDragRect(null);
     setEditing(null);
   };
 
@@ -116,11 +155,21 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     const grabbed = swatchAt(cell) ?? null;
-    const anchorCell = grabbed ? farCorner(grabbed, cell) : cell;
-    drag.current = { id: e.pointerId, start: cell, anchor: anchorCell, cursor: cell, moved: false, editing: grabbed };
+    const d: Drag = {
+      id: e.pointerId,
+      start: cell,
+      cursor: cell,
+      moved: false,
+      editing: grabbed,
+      anchor: grabbed ? farCorner(grabbed, cell) : cell,
+      rowAxis: axisAt(Math.floor(cell / cols)),
+      colAxis: axisAt(cell % cols),
+    };
+    drag.current = d;
     setKeyboard(false);
-    setAnchor(anchorCell);
-    setCursor(cell);
+    setAnchor(null);
+    setCursor(null);
+    setDragRect(rectFor(d, cell));
     setEditing(grabbed);
     setFocus(cell);
   };
@@ -132,7 +181,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
     if (cell === null || cell === d.cursor) return;
     d.cursor = cell;
     d.moved = true;
-    setCursor(cell);
+    setDragRect(rectFor(d, cell));
     sfx.tap();
   };
 
@@ -142,9 +191,9 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
     // The release point is the final corner, even if no move event reached it first.
     const end = cellAt(e.clientX, e.clientY) ?? d.cursor;
     const moved = d.moved || end !== d.start;
+    const rect = rectFor(d, end);
     clearDrag();
-    if (!moved) commit(d.start, d.start, true, d.editing);
-    else commit(d.anchor, end, false, d.editing);
+    commit(moved ? rect : rectOf(d.start, d.start, cols), !moved, d.editing);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -167,7 +216,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
         setAnchor(focus);
         setCursor(focus);
       } else {
-        commit(anchor, focus, anchor === focus);
+        commit(rectOf(anchor, focus, cols), anchor === focus);
         setAnchor(null);
         setCursor(null);
       }
@@ -180,7 +229,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
     }
   };
 
-  const preview = anchor !== null && cursor !== null ? rectOf(anchor, cursor, cols) : null;
+  const preview = dragRect ?? (anchor !== null && cursor !== null ? rectOf(anchor, cursor, cols) : null);
   const previewClue = preview ? clueIn(puzzle, preview) : -1;
   const previewOk = preview !== null && previewClue >= 0 && swatchFits(puzzle, preview);
   // A problem swatch gets one ring around it; any other flagged cell gets its own.
@@ -205,8 +254,9 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
           // the browser ended the drag (e.g. a system gesture): finish it where it was
           const d = drag.current;
           if (d && d.id === e.pointerId) {
+            const rect = rectFor(d, d.cursor);
             clearDrag();
-            if (d.moved) commit(d.anchor, d.cursor, false, d.editing);
+            if (d.moved) commit(rect, false, d.editing);
           }
         }}
         onKeyDown={onKeyDown}

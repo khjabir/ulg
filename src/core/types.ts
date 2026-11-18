@@ -47,10 +47,12 @@ export interface GameDef<P extends BasePuzzle = any, S = any, M = any> {
   pips?: boolean;
   hint(p: P, history: S[]): HintResult<S, M> | Promise<HintResult<S, M>>;
   /**
-   * Look for a broken rule or a dead end after every move. Return null when all is
-   * well. Keep it fast and never use the solution: only report what the player could
-   * work out from the board. The shell shows the message, buzzes once when a new
-   * problem appears, shakes the board when stuck, and passes `cells` to the board.
+   * Runs after every move. Report only two things: a piece that breaks its own rule
+   * ("rule": a 5 that isn't 5 cells, two kings in a row), or a true dead end where
+   * the player can't make another move ("stuck"). Never look ahead or use the
+   * solution: deductions are the player's job, and the hint's. Return null otherwise.
+   * The shell shows the message, buzzes once when a new problem appears, shakes the
+   * board when stuck, and passes `cells` to the board.
    */
   check?(p: P, s: S): Problem | null;
   /**

@@ -123,7 +123,7 @@ const UNITS: { name: "row" | "column" | "box"; cells: number[] }[] = [
   ...range(N).map((b) => ({ name: "box" as const, cells: range(N * N).filter((i) => boxOf(i) === b) })),
 ];
 
-/** A repeated digit, else a cell no digit fits, else a digit with nowhere to go. */
+/** A repeated digit. A full board with no repeats is solved. */
 export function check(_p: SudokuPuzzle, s: SudokuState): Problem | null {
   const g = s.values;
   for (const u of UNITS) {
@@ -132,25 +132,6 @@ export function check(_p: SudokuPuzzle, s: SudokuState): Problem | null {
       if (cells.length > 1) {
         return { kind: "rule", message: `This ${u.name} has ${cells.length === 2 ? "two" : cells.length} ${d}s. Each digit goes in a ${u.name} only once.`, cells };
       }
-    }
-  }
-  for (let i = 0; i < N * N; i++) {
-    if (g[i] || candidates(g, i).length) continue;
-    return {
-      kind: "stuck",
-      message: `No digit fits here: 1 to ${N} are all used in this cell's row, column or box. Change one of them.`,
-      cells: [i],
-    };
-  }
-  for (const u of UNITS) {
-    for (let d = 1; d <= N; d++) {
-      if (u.cells.some((i) => g[i] === d)) continue;
-      if (u.cells.some((i) => !g[i] && candidates(g, i).includes(d))) continue;
-      return {
-        kind: "stuck",
-        message: `There's nowhere left for a ${d} in this ${u.name}. Change a digit that blocks it.`,
-        cells: u.cells,
-      };
     }
   }
   return null;

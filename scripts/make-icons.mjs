@@ -2,7 +2,7 @@
 // The logo: an endless loop drawn over a board of game-coloured tiles, with an
 // orange dot where the line is being drawn (a nod to Zap).
 import sharp from "sharp";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 
 const IVORY = "#fff8e8";
 const INK = "#10201f";
@@ -94,4 +94,19 @@ sizes.forEach((n, i) => {
   offset += pngs[i].length;
 });
 await writeFile("public/favicon.ico", Buffer.concat([header, ...pngs]));
+// iPhone and iPad launch screens (Android draws its own from the manifest): the
+// logo on the page colour, one image per screen size in src/app/splash-sizes.json.
+const PAGE = "#eef2ee";
+await mkdir("public/splash", { recursive: true });
+const screens = JSON.parse(await readFile("src/app/splash-sizes.json", "utf8"));
+for (const { w, h, dpr } of screens) {
+  const W = w * dpr;
+  const H = h * dpr;
+  const size = Math.round(Math.min(W, H) * 0.3);
+  const logo = await sharp(rounded).resize(size, size).png().toBuffer();
+  await sharp({ create: { width: W, height: H, channels: 3, background: PAGE } })
+    .composite([{ input: logo, left: Math.round((W - size) / 2), top: Math.round(H * 0.42 - size / 2) }])
+    .png({ compressionLevel: 9, palette: true })
+    .toFile(`public/splash/launch-${W}x${H}.png`);
+}
 console.log("icons written");

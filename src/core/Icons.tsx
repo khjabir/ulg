@@ -97,6 +97,52 @@ export const SoundOffIcon = () => (
   </svg>
 );
 
+export const MenuIcon = () => (
+  <svg {...base}>
+    <circle cx="5" cy="12" r="1.2" fill="currentColor" />
+    <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+    <circle cx="19" cy="12" r="1.2" fill="currentColor" />
+  </svg>
+);
+
+export const InstallIcon = () => (
+  <svg {...base}>
+    <path d="M12 3v11" />
+    <path d="m7.5 9.5 4.5 4.5 4.5-4.5" />
+    <path d="M5 16v2.5A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V16" />
+  </svg>
+);
+
+/** The iPhone share button: a box with an arrow out of the top. */
+export const IosShareIcon = () => (
+  <svg {...base}>
+    <path d="M12 3v12" />
+    <path d="m8 7 4-4 4 4" />
+    <path d="M8.5 10H6.5A1.5 1.5 0 0 0 5 11.5v8A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-8a1.5 1.5 0 0 0-1.5-1.5h-2" />
+  </svg>
+);
+
+/** "Add to Home Screen": a rounded square with a plus. */
+export const AddSquareIcon = () => (
+  <svg {...base}>
+    <rect x="4" y="4" width="16" height="16" rx="4" />
+    <path d="M12 8.5v7M8.5 12h7" />
+  </svg>
+);
+
+export const RefreshIcon = () => (
+  <svg {...base}>
+    <path d="M20 12a8 8 0 1 1-2.3-5.6" />
+    <path d="M20 4v5h-5" />
+  </svg>
+);
+
+export const CheckIcon = () => (
+  <svg {...base}>
+    <path d="m5 12.5 4.5 4.5L19 7.5" />
+  </svg>
+);
+
 export const PencilIcon = () => (
   <svg {...base}>
     <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />

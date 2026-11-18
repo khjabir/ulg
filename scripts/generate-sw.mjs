@@ -28,7 +28,9 @@ async function walk(dir) {
 
 const files = (await walk(OUT))
   .map((f) => path.relative(OUT, f).split(path.sep).join("/"))
+  // Launch images and store screenshots are only fetched at install time: don't precache them.
   .filter((f) => !SKIP.has(f) && !f.startsWith("_not-found") && !f.endsWith(".map"))
+  .filter((f) => !f.startsWith("splash/") && !f.startsWith("screenshots/"))
   .sort();
 
 const hash = createHash("sha256");

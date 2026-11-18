@@ -7,7 +7,7 @@ import * as Z from "../src/games/zap/engine";
 import * as D from "../src/games/sixdoku/engine";
 import * as P from "../src/games/swatches/engine";
 import type { GameId, Problem } from "../src/core/puzzle";
-import { mulberry32 } from "../src/core/rng";
+import { codeToSeed, mulberry32 } from "../src/core/rng";
 
 let failures = 0;
 const fail = (msg: string) => {
@@ -265,6 +265,18 @@ for (const game of games) {
     );
   }
 }
+// Reported: a swatch that fits its own clue must not be flagged for crowding another.
+{
+  const sp = generators.swatches("easy", codeToSeed("1LLD0J7")!) as P.SwatchesPuzzle;
+  const two = sp.clues.find((c) => c.size === 2)!;
+  const r = Math.floor(two.cell / sp.cols);
+  const c = two.cell % sp.cols;
+  const rect = c > 0 ? { r0: r, c0: c - 1, r1: r, c1: c } : { r0: r, c0: c, r1: r, c1: c + 1 };
+  const pr = P.check(sp, [rect]);
+  if (pr) fail(`swatches 1LLD0J7: a fine 2-cell swatch was flagged: "${pr.message}"`);
+  else console.log(`swatches 1LLD0J7: the 2 drawn at ${JSON.stringify(rect)} draws no warning`);
+}
+
 console.log("\nProblem checks (random play):");
 for (const [game, t] of Object.entries(flagStats)) {
   console.log(`${game.padEnd(12)} flagged ${String(t.flagged).padStart(4)} of ${String(t.boards).padStart(5)} boards, no false alarms`);
