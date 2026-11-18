@@ -53,6 +53,12 @@ export interface GameDef<P extends BasePuzzle = any, S = any, M = any> {
    * problem appears, shakes the board when stuck, and passes `cells` to the board.
    */
   check?(p: P, s: S): Problem | null;
+  /**
+   * How long the hint takes to recharge, in ms of game time, given how many hints
+   * this puzzle has used so far (0 = the wait before the first one). Defaults to
+   * defaultHintWait in the shell.
+   */
+  hintWait?(hintsUsed: number): number;
   Board: ComponentType<BoardProps<P, S, M>>;
   HowTo: ComponentType;
   Icon: ComponentType;

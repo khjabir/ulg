@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.png" alt="ulg: Unlimited Logic Games. Logic puzzles you can't run out of, playable offline." width="100%">
+  <img src="docs/banner.png" alt="ULG: Unlimited Logic Games. Logic puzzles you can't run out of, playable offline." width="100%">
 </p>
 
 <p align="center">
@@ -10,7 +10,7 @@
   <img alt="No backend" src="https://img.shields.io/badge/backend-none-7a5a1e">
 </p>
 
-**ulg** is a growing collection of logic puzzles that never runs out. Every board is
+**ULG** is a growing collection of logic puzzles that never runs out. Every board is
 generated on your device and has exactly one solution, and most take between one and
 five minutes. Add it to your home screen and it plays like an app, with or without a
 connection.
@@ -76,7 +76,7 @@ Every game sets its own levels. Today's games each have three:
 
 - **It never runs out.** Tap *New puzzle* and a fresh board appears. A generator built for each game guarantees there's exactly one solution, so you never have to guess.
 - **It tells you when you're stuck.** Break a rule or paint yourself into a corner, and the game says what went wrong and rings the cells involved. That covers a Zap path that has cut cells off, a Sumbroke tile that can never merge again, a Kings row with no room left, and more. It speaks up the moment it happens, not after you've filled the board.
-- **Hints actually help.** A hint clears anything that can't be right and shows the next step. In Sumbroke and Zap, it takes you back to your last good position first.
+- **Hints help, but make you wait.** A hint clears anything that can't be right and shows the next step. In Sumbroke and Zap, it takes you back to your last good position first. The Hint button fills like a progress bar as it recharges: the first hint is ready after 20 seconds of play, and each one after that takes a little longer (up to 90 seconds). That keeps hints for when you're truly stuck.
 - **It feels like a game table.** You get chunky tiles you drag around, wooden clacks, chimes as a path grows, a soft buzz on phones, and a wave of confetti when you solve it.
 - **Drawing is forgiving.** Zap's line follows your finger smoothly. Drags that overshoot the board's edge still land on the edge row. You can grab a swatch and drag its end back and forth to resize it.
 - **You can challenge a friend.** Every board has a code, and *Challenge a friend* shares a link that rebuilds exactly the same puzzle.
@@ -196,7 +196,7 @@ docs/                  README images (banner.html is the banner's source)
 
 ## Add your own game
 
-ulg is built to grow. The shell provides the home-screen card, app shortcut, offline
+ULG is built to grow. The shell provides the home-screen card, app shortcut, offline
 cache, levels, timer, undo, hints, saving, stats, sounds, confetti and problem messages.
 A new game brings only its own rules and board.
 
@@ -214,6 +214,7 @@ export const mygame: GameDef<MyPuzzle, MyState, number[]> = {
   progress,     // how much is done, for the progress bar
   hint,         // the next step, or a way back to the last good position
   check,        // optional: a broken rule or a dead end to point out, or null
+  hintWait,     // optional: how long the hint takes to recharge (20 s, then 30, 45… by default)
   Board,        // draws the board; calls apply(next) for every move
   HowTo,        // the rules, shown before the first game
   Icon,         // the home-screen picture

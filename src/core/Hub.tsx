@@ -29,8 +29,8 @@ export function Hub() {
         <div className="hub-head-row">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="hub-logo" src={LOGO} width={58} height={58} alt="" />
-          <h1 className="hub-mark" aria-label="ulg">
-            {["u", "l", "g"].map((ch, i) => (
+          <h1 className="hub-mark" aria-label="ULG">
+            {["U", "L", "G"].map((ch, i) => (
               <span key={ch} className="hub-letter" style={{ "--i": i } as CSSProperties} aria-hidden>
                 {ch}
               </span>

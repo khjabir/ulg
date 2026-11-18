@@ -50,6 +50,8 @@ export interface SavedGame<P = unknown, S = unknown> {
   elapsedMs: number;
   hintsUsed: number;
   status: "playing" | "won";
+  /** The hint meter, in game time: charging since `from`, ready at `ready` (ms). */
+  hintAt?: { from: number; ready: number };
 }
 
 export interface LevelStats {

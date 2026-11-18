@@ -35,6 +35,13 @@ import {
 } from "./Icons";
 
 type Status = { text: string; alert?: boolean } | null;
+
+/**
+ * Hints recharge so they stay a last resort and not a shortcut: the first one is
+ * ready after 20 s of play, the next after 30 s, then 45 s, 60 s… up to 90 s.
+ * Only game time counts, so a paused or hidden game doesn't charge.
+ */
+const defaultHintWait = (used: number) => (used === 0 ? 20_000 : Math.min(90_000, 15_000 + 15_000 * used));
 type DialogKind = "help" | "stats" | "win" | null;
 
 interface Play<P, S> {
@@ -42,6 +49,7 @@ interface Play<P, S> {
   history: S[];
   hintsUsed: number;
   status: "playing" | "won";
+  hintAt: { from: number; ready: number };
 }
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -72,6 +80,7 @@ function useStopwatch(running: boolean) {
 
 export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P, S, M> }) {
   const levelIds = useMemo(() => def.levels.map((l) => l.id), [def]);
+  const hintWait = useCallback((used: number) => def.hintWait?.(used) ?? defaultHintWait(used), [def]);
   const [level, setLevel] = useState(def.levels[0].id);
   const [play, setPlay] = useState<Play<P, S> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -140,7 +149,7 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
       requestPuzzle<P>(def.id, lv, seed)
         .then((puzzle) => {
           if (t !== token.current) return;
-          begin({ puzzle, history: [def.initialState(puzzle)], hintsUsed: 0, status: "playing" }, 0);
+          begin({ puzzle, history: [def.initialState(puzzle)], hintsUsed: 0, status: "playing", hintAt: { from: 0, ready: hintWait(0) } }, 0);
         })
         .catch(() => {
           if (t !== token.current) return;
@@ -148,7 +157,7 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
           setStatus({ text: "Couldn't build a puzzle. Tap New puzzle to try again.", alert: true });
         });
     },
-    [begin, def],
+    [begin, def, hintWait],
   );
 
   const newPuzzle = useCallback((lv: string) => startPuzzle(lv, nextSeeds.current[lv] ?? randomSeed()), [startPuzzle]);
@@ -158,12 +167,13 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
       const saved = loadGame<P, S>(def.id, lv);
       if (saved && saved.status === "playing" && saved.puzzle?.level === lv && saved.history?.length) {
         token.current++;
-        begin({ puzzle: saved.puzzle, history: saved.history, hintsUsed: saved.hintsUsed, status: "playing" }, saved.elapsedMs);
+        const hintAt = saved.hintAt ?? { from: 0, ready: hintWait(saved.hintsUsed) };
+        begin({ puzzle: saved.puzzle, history: saved.history, hintsUsed: saved.hintsUsed, status: "playing", hintAt }, saved.elapsedMs);
         return;
       }
       newPuzzle(lv);
     },
-    [begin, def.id, newPuzzle],
+    [begin, def.id, newPuzzle, hintWait],
   );
 
   useEffect(() => {
@@ -202,6 +212,7 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
         history: p.history,
         hintsUsed: p.hintsUsed,
         status: p.status,
+        hintAt: p.hintAt,
         elapsedMs: stopwatch.get(),
       });
     },
@@ -282,6 +293,13 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
   const askHint = async () => {
     const p = playRef.current;
     if (!p || p.status !== "playing" || hintBusy) return;
+    const left = p.hintAt.ready - stopwatch.get();
+    if (left > 0) {
+      sfx.tap();
+      const s = Math.ceil(left / 1000);
+      setStatus({ text: `The next hint is ready in ${s} ${s === 1 ? "second" : "seconds"}. Have another look first.` });
+      return;
+    }
     setHintBusy(true);
     setStatus({ text: "Looking for the next step…" });
     try {
@@ -292,10 +310,12 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
         let history = p.history.slice(0, Math.max(1, h.keep));
         if (h.state !== undefined) history = [...history, h.state];
         const last = history[history.length - 1];
+        const now = stopwatch.get();
         return {
           ...cur,
           history,
           hintsUsed: cur.hintsUsed + 1,
+          hintAt: { from: now, ready: now + hintWait(cur.hintsUsed + 1) },
           status: def.isSolved(cur.puzzle, last) ? "won" : "playing",
         };
       });
@@ -388,6 +408,23 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [problem, shakeBoard]);
+
+  // The hint meter fills with game time; the button glows once when it's ready.
+  const clock = stopwatch.get();
+  const hintAt = play?.hintAt;
+  const charge = hintAt && hintAt.ready > hintAt.from ? Math.min(1, Math.max(0, (clock - hintAt.from) / (hintAt.ready - hintAt.from))) : 1;
+  const charging = !!play && !won && charge < 1;
+  const hintSecs = hintAt ? Math.max(0, Math.ceil((hintAt.ready - clock) / 1000)) : 0;
+  const wasCharging = useRef(false);
+  const [hintFresh, setHintFresh] = useState(false);
+  useEffect(() => {
+    const was = wasCharging.current;
+    wasCharging.current = charging;
+    if (!was || charging) return;
+    setHintFresh(true);
+    const t = window.setTimeout(() => setHintFresh(false), 900);
+    return () => window.clearTimeout(t);
+  }, [charging]);
 
   // Without a check (or when it finds nothing), a full but unsolved board still gets a word.
   const fullButWrong = !problem && !!play && !won && !loading && progress.done >= progress.total;
@@ -509,7 +546,17 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
         <button type="button" className="btn" onClick={undo} disabled={!play || won || atStart}>
           <UndoIcon /> Undo
         </button>
-        <button type="button" className="btn" onClick={askHint} disabled={!play || won || hintBusy || loading}>
+        <button
+          type="button"
+          className={`btn hint-btn ${charging ? "charging" : ""} ${hintFresh ? "fresh" : ""}`}
+          onClick={askHint}
+          disabled={!play || won || hintBusy || loading}
+          aria-disabled={charging || undefined}
+          aria-label={charging ? `Hint, ready in ${hintSecs} seconds` : "Hint"}
+          title={charging ? `Ready in ${hintSecs}s` : undefined}
+          style={{ "--charge": charge } as CSSProperties}
+        >
+          <span className="hint-meter" aria-hidden />
           <HintIcon /> Hint
         </button>
         <button type="button" className="btn" onClick={reset} disabled={!play || won || atStart}>

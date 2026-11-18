@@ -86,50 +86,127 @@
   place-items: center;
 }
 
+/* Keypad: the digits in two rows of three (like a 2×3 box), Notes and Erase beside them. */
 .s-pad {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 1.6cqi;
+  grid-template-columns: 3fr 1.2fr;
+  gap: 2.4cqi;
   margin-top: 4.4cqi;
 }
 
-.s-key {
+.s-digits {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.4cqi;
+}
+
+.s-tools {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 2.4cqi;
+}
+
+.s-key,
+.s-tool {
   position: relative;
-  aspect-ratio: 1 / 1.12;
-  border-radius: 2.6cqi;
+  border-radius: 3.2cqi;
   border: 1px solid var(--line);
   background: var(--button);
   color: var(--button-ink);
-  font-size: 6cqi;
-  font-weight: 700;
-  display: grid;
-  place-items: center;
+  box-shadow: 0 0.9cqi 0 var(--line);
   cursor: pointer;
   padding: 0;
+  font: inherit;
+}
+
+.s-key {
+  aspect-ratio: 1.6;
+  display: grid;
+  place-items: center;
+  font-size: 8cqi;
+  font-weight: 800;
+  font-stretch: 112%;
+  line-height: 1;
 }
 
 .s-key small {
   position: absolute;
-  right: 12%;
-  bottom: 8%;
-  font-size: 2.6cqi;
+  right: 7%;
+  top: 9%;
+  font-size: 2.8cqi;
+  font-weight: 600;
+  font-stretch: 100%;
+  color: var(--ink-soft);
+}
+
+.s-key.done {
+  color: var(--ink-soft);
+  background: transparent;
+  box-shadow: none;
+}
+
+.s-key.done small {
+  color: var(--felt);
+  font-weight: 800;
+}
+
+.s-tool {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  align-content: center;
+  align-items: center;
+  column-gap: 1.6cqi;
+  padding: 0 2.4cqi;
+  text-align: left;
+  font-size: 3.6cqi;
+  font-weight: 700;
+}
+
+.s-tool svg {
+  grid-row: span 2;
+  width: 5.4cqi;
+  height: 5.4cqi;
+}
+
+.s-switch {
+  font-size: 2.8cqi;
   font-weight: 600;
   color: var(--ink-soft);
 }
 
-.s-key.tool svg {
-  width: 45%;
-  height: 45%;
-}
-
-.s-key.on {
+.s-tool.on {
   background: var(--felt);
-  color: #fff8e8;
   border-color: var(--felt);
+  color: #fff8e8;
+  box-shadow: 0 0.9cqi 0 var(--felt-deep);
 }
 
-.s-key:disabled {
+.s-tool.on .s-switch {
+  color: #fff8e8;
+}
+
+.s-key:disabled,
+.s-tool:disabled {
   opacity: 0.4;
+  cursor: default;
+}
+
+/* Taller keypad: give the board a little less height on short screens. */
+.game-sixdoku .board-wrap {
+  width: min(100%, 460px, max(260px, calc(100svh - 470px)));
+}
+
+@media (max-height: 720px) {
+  .game-sixdoku .board-wrap {
+    width: min(100%, 460px, max(248px, calc(100svh - 440px)));
+  }
+  .s-pad {
+    margin-top: 3cqi;
+  }
+  .s-key {
+    aspect-ratio: 2.1;
+  }
 }
 
 .s-cell:not(.given) .s-digit {
@@ -152,12 +229,16 @@
   transition: background-color 140ms ease;
 }
 
-.s-key {
+.s-key,
+.s-tool {
   transition:
-    transform 100ms ease,
+    transform 90ms ease,
+    box-shadow 90ms ease,
     background-color 160ms ease;
 }
 
-.s-key:active:not(:disabled) {
-  transform: scale(0.92);
+.s-key:active:not(:disabled),
+.s-tool:active:not(:disabled) {
+  transform: translateY(0.8cqi);
+  box-shadow: 0 0.1cqi 0 var(--line);
 }

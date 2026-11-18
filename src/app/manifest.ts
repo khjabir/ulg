@@ -8,8 +8,8 @@ const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: `${base}/`,
-    name: "ulg: Unlimited Logic Games",
-    short_name: "ulg",
+    name: "ULG: Unlimited Logic Games",
+    short_name: "ULG",
     description: `Endless logic puzzles that play offline: ${GAME_IDS.map((id) => GAME_META[id].name).join(", ")}.`,
     start_url: `${base}/`,
     scope: `${base}/`,

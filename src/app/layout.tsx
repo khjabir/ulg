@@ -22,10 +22,10 @@ const archivo = localFont({
 const base = process.env.NEXT_PUBLIC_RELATIVE_ASSETS === "1" ? "." : (process.env.NEXT_PUBLIC_BASE_PATH ?? "");
 
 export const metadata: Metadata = {
-  title: "ulg: Unlimited Logic Games",
+  title: "ULG: Unlimited Logic Games",
   description: "Sumbroke, Kings, Tangle, Zap, Sixdoku and Swatches: endless logic puzzles that play offline.",
-  applicationName: "ulg",
-  appleWebApp: { capable: true, title: "ulg", statusBarStyle: "default" },
+  applicationName: "ULG",
+  appleWebApp: { capable: true, title: "ULG", statusBarStyle: "default" },
   formatDetection: { telephone: false },
   icons: {
     icon: [

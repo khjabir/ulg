@@ -147,26 +147,42 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
           })}
         </div>
       </div>
-      <div className="s-pad" role="group" aria-label="Number pad">
-        {[1, 2, 3, 4, 5, 6].map((d) => (
-          <button key={d} type="button" className="s-key" onClick={() => input(d)} disabled={!interactive}>
-            {d}
-            <small aria-label={`${remaining(d)} left`}>{remaining(d) || ""}</small>
+      <div className="s-pad">
+        <div className="s-digits" role="group" aria-label="Numbers">
+          {[1, 2, 3, 4, 5, 6].map((d) => {
+            const left = remaining(d);
+            return (
+              <button
+                key={d}
+                type="button"
+                className={`s-key ${left === 0 ? "done" : ""}`}
+                onClick={() => input(d)}
+                disabled={!interactive}
+                aria-label={`${d}, ${left === 0 ? "all placed" : `${left} left`}`}
+              >
+                {d}
+                <small aria-hidden>{left === 0 ? "✓" : left}</small>
+              </button>
+            );
+          })}
+        </div>
+        <div className="s-tools" role="group" aria-label="Tools">
+          <button
+            type="button"
+            className={`s-tool ${notesMode ? "on" : ""}`}
+            onClick={() => setNotesMode((m) => !m)}
+            aria-pressed={notesMode}
+            disabled={!interactive}
+          >
+            <PencilIcon />
+            <span>Notes</span>
+            <b className="s-switch" aria-hidden>{notesMode ? "On" : "Off"}</b>
           </button>
-        ))}
-        <button type="button" className="s-key tool" onClick={() => input(0)} disabled={!interactive} aria-label="Erase">
-          <EraseIcon />
-        </button>
-        <button
-          type="button"
-          className={`s-key tool ${notesMode ? "on" : ""}`}
-          onClick={() => setNotesMode((m) => !m)}
-          aria-pressed={notesMode}
-          aria-label="Notes"
-          disabled={!interactive}
-        >
-          <PencilIcon />
-        </button>
+          <button type="button" className="s-tool" onClick={() => input(0)} disabled={!interactive}>
+            <EraseIcon />
+            <span>Erase</span>
+          </button>
+        </div>
       </div>
     </div>
   );
