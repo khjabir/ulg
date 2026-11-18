@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { AppRuntime } from "@/core/AppChrome";
 import splashSizes from "./splash-sizes.json";
+import { Analytics } from "@vercel/analytics/next";
+import { RegisterServiceWorker } from "@/core/RegisterServiceWorker";
 import "@/styles/base.css";
 import "@/styles/shell.css";
 import "@/styles/hub.css";
@@ -21,11 +23,15 @@ const archivo = localFont({
   declarations: [{ prop: "font-stretch", value: "62% 125%" }],
 });
 
-const base = process.env.NEXT_PUBLIC_RELATIVE_ASSETS === "1" ? "." : (process.env.NEXT_PUBLIC_BASE_PATH ?? "");
+const base =
+  process.env.NEXT_PUBLIC_RELATIVE_ASSETS === "1"
+    ? "."
+    : (process.env.NEXT_PUBLIC_BASE_PATH ?? "");
 
 export const metadata: Metadata = {
   title: "ULG: Unlimited Logic Games",
-  description: "Endless logic puzzles that play offline. Every board is new, and every one has exactly one answer.",
+  description:
+    "Endless logic puzzles that play offline. Every board is new, and every one has exactly one answer.",
   applicationName: "ULG",
   appleWebApp: {
     capable: true,
@@ -41,8 +47,16 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: `${base}/favicon.ico`, sizes: "48x48" },
-      { url: `${base}/icons/favicon-32.png`, sizes: "32x32", type: "image/png" },
-      { url: `${base}/icons/icon-192.png`, sizes: "192x192", type: "image/png" },
+      {
+        url: `${base}/icons/favicon-32.png`,
+        sizes: "32x32",
+        type: "image/png",
+      },
+      {
+        url: `${base}/icons/icon-192.png`,
+        sizes: "192x192",
+        type: "image/png",
+      },
     ],
     apple: `${base}/icons/apple-touch-icon.png`,
   },
@@ -61,7 +75,11 @@ export const viewport: Viewport = {
 // Browsers can offer the install prompt before React has loaded: keep it for the Install button.
 const CATCH_INSTALL = `window.__ulgInstall=null;addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__ulgInstall=e;dispatchEvent(new Event("ulg-installable"))});`;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className={archivo.variable}>
       <head>
@@ -70,6 +88,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <AppRuntime />
+        <RegisterServiceWorker />
+        <Analytics />
       </body>
     </html>
   );
