@@ -9,6 +9,7 @@ import {
   area,
   clueIn,
   inRect,
+  sameRect,
   swatchFits,
   shapeOf,
   type SwatchesPuzzle,
@@ -36,7 +37,12 @@ export function ClueBadge({ size, shape, color }: { size: number | null; shape: 
   );
 }
 
-type Drag = { id: number; start: number; cursor: number; moved: boolean };
+/**
+ * A drag. `anchor` is the fixed corner; `editing` is the swatch being reshaped when
+ * the drag started on one (its far corner becomes the anchor, so you resize it by
+ * dragging the end you grabbed, back and forth).
+ */
+type Drag = { id: number; start: number; anchor: number; cursor: number; moved: boolean; editing: Rect | null };
 
 export function Board({ puzzle, state, apply, interactive, won, mark, dealing, say }: BoardProps<SwatchesPuzzle, SwatchesState, number[]>) {
   const { rows, cols, clues } = puzzle;
@@ -47,6 +53,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
   const [cursor, setCursor] = useState<number | null>(null);
   const [focus, setFocus] = useState(0);
   const [keyboard, setKeyboard] = useState(false);
+  const [editing, setEditing] = useState<Rect | null>(null);
   const marked = useMemo(() => new Set(mark ?? []), [mark]);
 
   const cellAt = (x: number, y: number) => (gridRef.current ? cellFromPoint(gridRef.current, x, y, rows, cols) : null);
@@ -61,8 +68,8 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
     return null;
   };
 
-  const commit = (a: number, b: number, tapped: boolean) => {
-    const existing = swatchAt(a);
+  const commit = (a: number, b: number, tapped: boolean, editing: Rect | null = null) => {
+    const existing = editing ?? swatchAt(a);
     if (tapped && existing) {
       apply(
         state.filter((r) => r !== existing),
@@ -74,13 +81,14 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
     const k = clueIn(puzzle, rect);
     if (k === -1) {
       if (tapped) say("Drag from one corner to the opposite corner to draw a swatch around a clue.");
-      else say("A swatch needs a clue inside it.", true);
+      else say(editing ? "A swatch needs a clue inside it, so the old one stays." : "A swatch needs a clue inside it.", true);
       return;
     }
     if (k === -2) {
-      say("A swatch can hold only one clue.", true);
+      say(editing ? "A swatch can hold only one clue, so the old one stays." : "A swatch can hold only one clue.", true);
       return;
     }
+    if (editing && sameRect(editing, rect)) return;
     const problem = mismatch(rect, k);
     apply(addSwatch(state, rect), { sound: problem ? "mark" : "place", step: area(rect) });
     if (problem) say(problem);
@@ -90,6 +98,24 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
     drag.current = null;
     setAnchor(null);
     setCursor(null);
+    setEditing(null);
+  };
+
+  /** Grabbing a drawn swatch: keep its far corner fixed (per axis), move the near one. */
+  const farCorner = (r: Rect, cell: number) => {
+    const row = Math.floor(cell / cols);
+    const col = cell % cols;
+    const clue = clues[clueIn(puzzle, r)]?.cell ?? cell;
+    const pick = (lo: number, hi: number, at: number, clueAt: number) => {
+      if (lo === hi) return lo;
+      const dLo = at - lo;
+      const dHi = hi - at;
+      if (dLo !== dHi) return dLo > dHi ? lo : hi;
+      return clueAt <= at ? lo : hi; // a tie: keep the clue's side fixed
+    };
+    return (
+      pick(r.r0, r.r1, row, Math.floor(clue / cols)) * cols + pick(r.c0, r.c1, col, clue % cols)
+    );
   };
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
@@ -98,10 +124,13 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
     if (cell === null) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    drag.current = { id: e.pointerId, start: cell, cursor: cell, moved: false };
+    const grabbed = swatchAt(cell) ?? null;
+    const anchorCell = grabbed ? farCorner(grabbed, cell) : cell;
+    drag.current = { id: e.pointerId, start: cell, anchor: anchorCell, cursor: cell, moved: false, editing: grabbed };
     setKeyboard(false);
-    setAnchor(cell);
+    setAnchor(anchorCell);
     setCursor(cell);
+    setEditing(grabbed);
     setFocus(cell);
   };
 
@@ -123,7 +152,8 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
     const end = cellAt(e.clientX, e.clientY) ?? d.cursor;
     const moved = d.moved || end !== d.start;
     clearDrag();
-    commit(d.start, end, !moved);
+    if (!moved) commit(d.start, d.start, true, d.editing);
+    else commit(d.anchor, end, false, d.editing);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -180,7 +210,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
           const d = drag.current;
           if (d && d.id === e.pointerId) {
             clearDrag();
-            if (d.moved) commit(d.start, d.cursor, false);
+            if (d.moved) commit(d.anchor, d.cursor, false, d.editing);
           }
         }}
         onKeyDown={onKeyDown}
@@ -194,6 +224,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
           />
         ))}
         {state.map((r) => {
+          if (editing && sameRect(editing, r)) return null;
           const ci = clueIn(puzzle, r);
           const color = ci >= 0 ? SWATCH_COLORS[clues[ci].color] : "#ccc";
           return (
@@ -205,7 +236,10 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
           );
         })}
         {preview && (
-          <div className={`p-preview ${previewClue < 0 ? "no" : previewOk ? "ok" : ""}`} style={boxStyle(preview)}>
+          <div
+            className={`p-preview ${previewClue < 0 ? "no" : previewOk ? "ok" : ""}`}
+            style={{ ...boxStyle(preview), ...(previewClue >= 0 ? { "--pc": SWATCH_COLORS[clues[previewClue].color] } : {}) } as CSSProperties}
+          >
             <span>{area(preview)}</span>
           </div>
         )}

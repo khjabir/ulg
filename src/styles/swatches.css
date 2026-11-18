@@ -196,8 +196,9 @@
 }
 
 .p-preview.ok {
-  border-color: #2d8a5f;
-  background: rgba(45, 138, 95, 0.12);
+  border-style: solid;
+  border-color: var(--pc, #2d8a5f);
+  background: color-mix(in srgb, var(--pc, #2d8a5f) 38%, transparent);
 }
 
 .p-swatch.bad::before {

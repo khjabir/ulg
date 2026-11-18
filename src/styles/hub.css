@@ -39,7 +39,7 @@
   padding-bottom: 6px;
   color: var(--n-blue);
   animation: letter-in 520ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
-  animation-delay: calc(var(--i) * 70ms);
+  animation-delay: calc(var(--i) * 70ms + 120ms);
 }
 
 .hub-letter:nth-child(2) {
@@ -201,7 +201,34 @@
 .hub-head-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+}
+
+.hub-logo {
+  width: 58px;
+  height: 58px;
+  border-radius: 14px;
+  box-shadow: 0 6px 14px -6px rgba(6, 30, 28, 0.5);
+  animation: logo-in 640ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes logo-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6) rotate(-12deg);
+  }
+}
+
+@media (max-width: 380px) {
+  .hub-logo {
+    width: 50px;
+    height: 50px;
+  }
+  .hub-letter {
+    width: 50px;
+    height: 50px;
+    font-size: 32px;
+  }
 }
 
 /* ---------------- Not found ---------------- */

@@ -119,10 +119,19 @@
   text-anchor: middle;
 }
 
-.z-head {
-  transition:
-    cx 70ms ease-out,
-    cy 70ms ease-out;
+/* the line from the last cell to the finger: same stroke as the path, so they read as one */
+.z-lead {
+  stroke: var(--zap-path);
+  stroke-width: 0.36;
+  stroke-linecap: round;
+}
+
+.z-grid.drawing {
+  cursor: grabbing;
+}
+
+.z-grid.drawing .z-head {
+  r: 0.24;
 }
 
 .z-num.reached {
