@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
 import { RegisterServiceWorker } from "@/core/RegisterServiceWorker";
 import "@/styles/base.css";
 import "@/styles/shell.css";
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <RegisterServiceWorker />
+        <Analytics />
       </body>
     </html>
   );
