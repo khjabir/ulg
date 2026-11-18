@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import { AppRuntime } from "@/core/AppChrome";
 import splashSizes from "./splash-sizes.json";
 import { Analytics } from "@vercel/analytics/next";
-import { RegisterServiceWorker } from "@/core/RegisterServiceWorker";
 import "@/styles/base.css";
 import "@/styles/shell.css";
 import "@/styles/hub.css";
@@ -72,6 +71,10 @@ export const viewport: Viewport = {
   ],
 };
 
+// Vercel Web Analytics only works on Vercel, which serves its script. Vercel sets
+// VERCEL=1 during its builds; on any other host the script would 404 on every page.
+const onVercel = process.env.VERCEL === "1";
+
 // Browsers can offer the install prompt before React has loaded: keep it for the Install button.
 const CATCH_INSTALL = `window.__ulgInstall=null;addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__ulgInstall=e;dispatchEvent(new Event("ulg-installable"))});`;
 
@@ -88,8 +91,7 @@ export default function RootLayout({
       <body>
         {children}
         <AppRuntime />
-        <RegisterServiceWorker />
-        <Analytics />
+        {onVercel && <Analytics />}
       </body>
     </html>
   );

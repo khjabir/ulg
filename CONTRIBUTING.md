@@ -39,8 +39,9 @@ screenshots for anything players will see.
   takes a deduction to see; that's what the hint is for.
 - **Touch, mouse and keyboard all work**, on a small phone and a big screen, in
   light and dark mode, with reduced motion respected.
-- **No backend, no tracking, no new runtime dependencies.** Everything runs on the
-  player's device and works offline.
+- **No backend, no new tracking, no new runtime dependencies.** Everything runs on
+  the player's device and works offline. (The only analytics are Vercel's page-view
+  counts, in builds made on Vercel.)
 - **Original work.** Use your own names, rules text and artwork, not another
   company's.
 

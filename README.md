@@ -187,7 +187,7 @@ unfinishable, and every real dead end must be caught.
 ## Under the hood
 
 - **Next.js 16** (App Router, static export) with **React 19** and strict **TypeScript**.
-- No backend and no tracking. Everything runs in the browser, and progress lives in `localStorage`.
+- No backend. Puzzles are made in the browser and progress lives in `localStorage`. Builds made on Vercel count page views with Vercel Web Analytics; builds for other hosts leave it out.
 - Sound effects are synthesized with the Web Audio API, so the project ships no audio files.
 - A hand-written service worker precaches every page for offline play, and holds each update until the player says go.
 - The only font is Archivo, served from the app itself.
