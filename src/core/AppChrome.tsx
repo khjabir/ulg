@@ -40,7 +40,7 @@ function UpdateBanner() {
         <RefreshIcon />
       </span>
       <span className="update-text">
-        <b>A new version of ULG is ready</b>
+        <b>A new version of Refill is ready</b>
         <span>Your game picks up right where you left it.</span>
       </span>
       <span className="update-actions">
@@ -105,7 +105,7 @@ export function InstallCard({ onHowTo }: { onHowTo: () => void }) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={LOGO} alt="" width={52} height={52} />
         <span className="install-text">
-          <b>Installing ULG…</b>
+          <b>Installing Refill…</b>
           <span>Your browser is adding it to your home screen. This takes a few seconds.</span>
           <Busy label="Installing" />
         </span>
@@ -120,7 +120,7 @@ export function InstallCard({ onHowTo }: { onHowTo: () => void }) {
         <img src={LOGO} alt="" width={52} height={52} />
         <span className="install-text">
           <b>
-            <CheckIcon /> ULG is installed
+            <CheckIcon /> Refill is installed
           </b>
           <span>Open it from your home screen to play full screen.</span>
         </span>
@@ -144,7 +144,7 @@ export function InstallCard({ onHowTo }: { onHowTo: () => void }) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={LOGO} alt="" width={52} height={52} />
       <span className="install-text">
-        <b>Get the ULG app</b>
+        <b>Get the Refill app</b>
         <span>Full screen, works offline, one tap from your home screen.</span>
       </span>
       {app.canPrompt ? (
@@ -174,7 +174,7 @@ function InstallSteps({ app }: { app: AppState }) {
   if (app.install === "installing") {
     return (
       <>
-        <p className="menu-line">Installing ULG… your browser is adding it to your home screen.</p>
+        <p className="menu-line">Installing Refill… your browser is adding it to your home screen.</p>
         <Busy label="Installing" />
       </>
     );
@@ -182,7 +182,7 @@ function InstallSteps({ app }: { app: AppState }) {
   if (app.install === "installed") {
     return (
       <p className="menu-line ok">
-        <CheckIcon /> Installed. Open ULG from your home screen to play full screen.
+        <CheckIcon /> Installed. Open Refill from your home screen to play full screen.
       </p>
     );
   }
@@ -191,7 +191,7 @@ function InstallSteps({ app }: { app: AppState }) {
       <>
         <p className="menu-line">Play full screen from your home screen, even offline.</p>
         <button type="button" className="btn primary" onClick={() => void promptInstall()}>
-          <InstallIcon /> Install ULG
+          <InstallIcon /> Install Refill
         </button>
       </>
     );
@@ -206,7 +206,7 @@ function InstallSteps({ app }: { app: AppState }) {
           Scroll down and tap <span className="key"><AddSquareIcon /> Add to Home Screen</span>.
         </li>
         <li>
-          Tap <b>Add</b>. ULG now opens full screen from its own icon.
+          Tap <b>Add</b>. Refill now opens full screen from its own icon.
         </li>
       </ol>
     );
@@ -220,7 +220,7 @@ function InstallSteps({ app }: { app: AppState }) {
         <li>
           Tap <b>Install app</b> or <b>Add to Home screen</b>.
         </li>
-        <li>ULG now opens full screen from its own icon.</li>
+        <li>Refill now opens full screen from its own icon.</li>
       </ol>
     );
   }
@@ -238,7 +238,7 @@ const UPDATE_LINE: Record<AppState["update"], string> = {
   downloading: "Downloading the new version…",
   ready: "A new version is ready.",
   latest: "You have the latest version.",
-  offline: "You're offline. ULG checks again when you're back online.",
+  offline: "You're offline. Refill checks again when you're back online.",
   unavailable: "Updates arrive by themselves in the installed app.",
 };
 
@@ -257,7 +257,7 @@ export function AppMenu({ open, onOpenChange }: { open: boolean; onOpenChange: (
       <button type="button" className="icon-btn" aria-label="App menu" onClick={() => onOpenChange(true)}>
         <MenuIcon />
       </button>
-      <Dialog open={open} onClose={() => onOpenChange(false)} title="ULG" label="App menu" className="app-menu">
+      <Dialog open={open} onClose={() => onOpenChange(false)} title="Refill" label="App menu" className="app-menu">
         <section>
           <h3>{app.standalone || app.install === "installed" ? "App" : "Install the app"}</h3>
           <InstallSteps app={app} />

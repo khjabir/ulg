@@ -15,7 +15,7 @@ export const GAME_IDS = Object.keys(GAME_META) as MetaId[];
 
 /** Page title and description for a game's route. */
 export const gameMetadata = (id: MetaId): Metadata => ({
-  title: `${GAME_META[id].name} | ULG`,
+  title: `${GAME_META[id].name} | Refill`,
   description: GAME_META[id].blurb,
 });
 

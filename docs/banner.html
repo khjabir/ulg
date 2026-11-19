@@ -8,8 +8,9 @@ body{margin:0;width:1280px;height:640px;font-family:Archivo,sans-serif}
 .left{position:absolute;left:84px;top:104px;width:560px;z-index:2;color:#fff8e8}
 .brand{display:flex;align-items:center;gap:14px}
 .brand img{width:104px;height:104px;border-radius:24px;box-shadow:0 14px 30px -10px rgba(0,0,0,.6)}
-.t{width:84px;height:84px;border-radius:20px;display:grid;place-items:center;background:linear-gradient(#fffdf6,#fff8e8);box-shadow:0 7px 0 #dccaa6,0 16px 24px -8px rgba(0,0,0,.5);
-  font-weight:900;font-stretch:112%;font-size:52px;line-height:1;padding-bottom:5px}
+.word{position:relative;font-weight:900;font-stretch:118%;font-size:92px;line-height:1;letter-spacing:-.015em;color:#fff8e8;margin-left:10px}
+.word i{font-style:normal;position:relative}
+.word i::after{content:"";position:absolute;left:50%;top:.1em;width:.2em;height:.2em;margin-left:-.1em;border-radius:50%;background:#ff8a4c}
 h1{margin:44px 0 0;font-size:56px;line-height:1.02;font-weight:900;font-stretch:118%;letter-spacing:-.01em}
 p{margin:18px 0 0;font-size:23px;line-height:1.45;color:rgba(255,248,232,.78);max-width:500px}
 .chips{display:grid;grid-template-columns:repeat(2,max-content);gap:10px;margin-top:30px}
@@ -20,10 +21,10 @@ p{margin:18px 0 0;font-size:23px;line-height:1.45;color:rgba(255,248,232,.78);ma
 </style></head><body><div class="b">
 <div class="left">
   <div class="brand"><img src="../public/logo.svg">
-    <span class="t" style="color:#1c3f94">U</span><span class="t" style="color:#c3313b">L</span><span class="t" style="color:#c9651f">G</span>
+    <span class="word">Ref<i>ı</i>ll</span>
   </div>
-  <h1>Unlimited Logic Games</h1>
-  <p>Logic puzzles you can't run out of. A fresh board every time, and it plays offline.</p>
+  <h1>Bottomless logic puzzles</h1>
+  <p>Finish one and there's always another. A fresh board every time, and it plays offline.</p>
   <div class="chips">
     <span class="chip" style="background:#1f5f5b">Endless boards</span><span class="chip" style="background:#4a3a6b">One answer each</span>
     <span class="chip" style="background:#6b2f4f">Hints that help</span><span class="chip" style="background:#1f4a6e">Works offline</span>

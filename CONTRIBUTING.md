@@ -1,4 +1,4 @@
-# Contributing to ULG
+# Contributing to Refill
 
 Thanks for wanting to help. Bug fixes, polish, new games and better docs are all
 welcome.

@@ -93,42 +93,84 @@ html.no-splash #splash,
 }
 
 .splash-word {
-  display: flex;
-  gap: 9px;
+  font-size: min(15vw, 64px);
 }
 
-.splash-tile {
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  padding-bottom: 2px;
-  background: linear-gradient(180deg, var(--tile-top), var(--tile));
-  box-shadow:
-    0 4px 0 var(--tile-edge),
-    0 8px 14px -6px rgba(6, 30, 28, 0.35);
-  font-size: 27px;
+/* ---------------- Wordmark ---------------- */
+
+.wordmark {
+  position: relative;
+  display: inline-block;
   font-weight: 900;
-  font-stretch: 112%;
+  font-stretch: 118%;
+  letter-spacing: -0.015em;
   line-height: 1;
-  color: var(--n-blue);
-  animation: letter-in 520ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
-  animation-delay: calc(var(--i) * 80ms + 260ms);
+  padding-top: 0.12em;
+  color: var(--ink);
+  white-space: nowrap;
 }
 
-.splash-tile:nth-child(2) {
-  color: var(--n-red);
+.wm-base,
+.wm-fill {
+  display: block;
 }
 
-.splash-tile:nth-child(3) {
-  color: var(--n-orange);
+.wm-i {
+  position: relative;
+}
+
+/* the i's dot: the orange dot from the logo */
+.wm-dot {
+  position: absolute;
+  left: 50%;
+  /* sits where Archivo's own dot would: from the l's height down to just above the stem */
+  top: 0.1em;
+  width: 0.2em;
+  height: 0.2em;
+  margin-left: -0.1em;
+  border-radius: 50%;
+  background: #ff8a4c;
+  box-shadow: inset 0 -0.04em 0 rgba(120, 40, 0, 0.28);
+}
+
+/* Splash: the word fills up from the bottom, then the dot drops on. */
+.wordmark.filling .wm-base {
+  color: color-mix(in srgb, var(--ink) 13%, transparent);
+}
+
+.wm-fill {
+  position: absolute;
+  inset: 0;
+  padding-top: inherit;
+  clip-path: inset(100% 0 0 0);
+  animation: wm-fill 640ms cubic-bezier(0.45, 0, 0.25, 1) 220ms forwards;
+}
+
+@keyframes wm-fill {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.wordmark.filling .wm-dot {
+  animation: wm-drop 420ms cubic-bezier(0.3, 1.3, 0.5, 1) 820ms both;
+}
+
+@keyframes wm-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-0.9em) scale(0.7);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .splash-logo,
-  .splash-tile {
+  .wordmark.filling .wm-dot {
     animation: none;
+  }
+  .wm-fill {
+    animation: none;
+    clip-path: none;
   }
 }
 

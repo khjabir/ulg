@@ -13,6 +13,7 @@ import "@/styles/zap.css";
 import "@/styles/sixdoku.css";
 import "@/styles/swatches.css";
 import "@/styles/app.css";
+import { Wordmark } from "@/core/Wordmark";
 
 const archivo = localFont({
   src: "./fonts/archivo-latin.woff2",
@@ -28,13 +29,13 @@ const base =
     : (process.env.NEXT_PUBLIC_BASE_PATH ?? "");
 
 export const metadata: Metadata = {
-  title: "ULG: Unlimited Logic Games",
+  title: "Refill: Bottomless Logic Puzzles",
   description:
     "Endless logic puzzles that play offline. Every board is new, and every one has exactly one answer.",
-  applicationName: "ULG",
+  applicationName: "Refill",
   appleWebApp: {
     capable: true,
-    title: "ULG",
+    title: "Refill",
     statusBarStyle: "default",
     // iPhone and iPad launch screens (scripts/make-icons.mjs draws them).
     startupImage: splashSizes.map(({ w, h, dpr }) => ({
@@ -96,13 +97,7 @@ export default function RootLayout({
         <div id="splash" aria-hidden="true">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="splash-logo" src={`${base}/logo.svg`} alt="" width={160} height={160} />
-          <span className="splash-word">
-            {["U", "L", "G"].map((ch, i) => (
-              <span key={ch} className="splash-tile" style={{ "--i": i } as React.CSSProperties}>
-                {ch}
-              </span>
-            ))}
-          </span>
+          <Wordmark fill className="splash-word" />
         </div>
         {children}
         <AppRuntime />

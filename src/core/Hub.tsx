@@ -8,6 +8,7 @@ import { onSoundChange, setSoundOn, soundOn } from "./sound";
 import { SoundOffIcon, SoundOnIcon } from "./Icons";
 import { AppMenu, InstallCard } from "./AppChrome";
 import { useApp } from "./app";
+import { Wordmark } from "./Wordmark";
 
 type Summary = { solved: number; inProgress: boolean };
 
@@ -33,12 +34,8 @@ export function Hub() {
         <div className="hub-head-row">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="hub-logo" src={LOGO} width={58} height={58} alt="" />
-          <h1 className="hub-mark" aria-label="ULG">
-            {["U", "L", "G"].map((ch, i) => (
-              <span key={ch} className="hub-letter" style={{ "--i": i } as CSSProperties} aria-hidden>
-                {ch}
-              </span>
-            ))}
+          <h1 className="hub-mark">
+            <Wordmark />
           </h1>
           <button
             type="button"
@@ -51,7 +48,7 @@ export function Hub() {
           </button>
           <AppMenu open={menu} onOpenChange={setMenu} />
         </div>
-        <p className="hub-lede">Unlimited logic games. Every board is new, and every one has exactly one answer.</p>
+        <p className="hub-lede">Bottomless logic puzzles. Finish one and there&rsquo;s always another, each with exactly one answer.</p>
       </header>
 
       <InstallCard onHowTo={() => setMenu(true)} />

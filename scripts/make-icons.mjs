@@ -1,4 +1,4 @@
-// Draws the ulg logo and writes every icon. Run: npm run icons
+// Draws the Refill logo and writes every icon. Run: npm run icons
 // The logo: an endless loop drawn over a board of game-coloured tiles, with an
 // orange dot where the line is being drawn (a nod to Zap).
 import sharp from "sharp";

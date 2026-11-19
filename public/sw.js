@@ -1,10 +1,10 @@
-/* ULG offline service worker.
+/* Refill offline service worker.
  * `npm run build` rewrites the three constants below with the full precache list
  * (scripts/generate-sw.mjs). Without that step it still caches files as they load.
  *
  * Updates: a new deploy changes this file, so the browser installs the new version
  * in the background. The very first install takes over at once; an update waits
- * until the player taps "Update" (the page sends SKIP_WAITING) or every ULG tab and
+ * until the player taps "Update" (the page sends SKIP_WAITING) or every Refill tab and
  * app window has closed. That way a running game never has its files swapped out. */
 const VERSION = "dev";
 const PRECACHE = [];

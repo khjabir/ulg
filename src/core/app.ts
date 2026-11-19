@@ -250,7 +250,7 @@ export function applyUpdate() {
 
 /* ---------------- Splash screen ---------------- */
 
-const SPLASH_MIN_MS = 900;
+const SPLASH_MIN_MS = 1300; // long enough for the wordmark to fill up
 let splashDone: (() => void) | null = null;
 const splashGone = typeof window === "undefined" ? Promise.resolve() : new Promise<void>((r) => (splashDone = r));
 

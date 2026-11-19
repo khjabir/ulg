@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.png" alt="ULG: Unlimited Logic Games. Logic puzzles you can't run out of, playable offline." width="100%">
+  <img src="docs/banner.png" alt="Refill: bottomless logic puzzles. Finish one and there's always another, and it plays offline." width="100%">
 </p>
 
 <p align="center">
@@ -11,10 +11,10 @@
   <img alt="No backend" src="https://img.shields.io/badge/backend-none-7a5a1e">
 </p>
 
-**ULG** is a growing collection of logic puzzles that never runs out. Every board is
-generated on your device and has exactly one solution, and most take between one and
-five minutes. Add it to your home screen and it plays like an app, with or without a
-connection.
+**Refill** is a growing collection of logic puzzles that never runs out: finish one and
+the next is already waiting, like a bottomless cup. Every board is generated on your
+device and has exactly one solution, and most take between one and five minutes. Add it
+to your home screen and it plays like an app, with or without a connection.
 
 Each game is a self-contained module, so the shelf keeps growing:
 [adding another](#add-your-own-game) doesn't touch the rest.
@@ -129,7 +129,7 @@ npm start          # preview out/ locally
 
 ### Install it
 
-Open the site on your phone. A **Get the ULG app** card on the home screen, and the
+Open the site on your phone. A **Get the Refill app** card on the home screen, and the
 **⋯** menu, walk you through installing it:
 
 - **Android (Chrome, Edge, Samsung Internet):** tap **Install**.
@@ -146,7 +146,7 @@ Deploy a new build to the same address and every installed copy picks it up:
 1. The app checks for a new version when it opens, when it comes back to the
    foreground, and every 30 minutes. You can also tap **⋯ → Check for updates**.
 2. The new version downloads in the background, while the current one keeps running.
-3. A banner says **A new version of ULG is ready**. **Update** switches over and
+3. A banner says **A new version of Refill is ready**. **Update** switches over and
    reloads. A game in progress picks up exactly where it was. **Later** waits, and the
    new version applies itself the next time the app is fully closed and reopened.
 
@@ -218,7 +218,7 @@ docs/                  README images (banner.html is the banner's source)
 
 ## Add your own game
 
-ULG is built to grow. The shell provides the home-screen card, app shortcut, offline
+Refill is built to grow. The shell provides the home-screen card, app shortcut, offline
 cache, levels, timer, undo, hints, saving, stats, sounds, confetti and problem messages.
 A new game brings only its own rules and board.
 
