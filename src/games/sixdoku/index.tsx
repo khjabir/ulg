@@ -55,6 +55,12 @@ export const sixdoku: GameDef<SudokuPuzzle, SudokuState, number[]> = {
       default: true,
     },
     {
+      id: "hideFinished",
+      label: "Hide finished numbers",
+      help: "Take a digit off the keypad once all six are placed.",
+      default: false,
+    },
+    {
       id: "highlightSections",
       label: "Highlight sections",
       help: "Shade the row, column and box of the cell you've selected.",

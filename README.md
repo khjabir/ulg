@@ -57,7 +57,7 @@ Each game is a self-contained module, so the shelf keeps growing:
     <td align="center">
       <img src="docs/screens/swatches.png" width="240" alt="Swatches board with coloured rectangles"><br>
       <b>Swatches</b><br>
-      <sub>Cut the grid into rectangles of 2 or more cells, one clue in each. The badge gives the shape (square, wide, tall or any); a number, when there is one, gives the size.</sub>
+      <sub>Cut the grid into rectangles of 2 or more cells, one clue in each. The shape behind a clue sets the shape (square, wide, tall, or crossed bars for any); a number, when there is one, sets the size. Solve it and the board becomes a picture.</sub>
     </td>
   </tr>
 </table>
@@ -71,7 +71,7 @@ Every game sets its own levels. Today's games each have three:
 | Tangle | 6×6, extra givens | 6×6 | 6×6, fewest givens |
 | Zap | 6×6 | 7×7 with walls | 8×8, more walls |
 | Sixdoku | 16 givens | 12 givens | as few as possible |
-| Swatches | 5×5, every clue numbered | 6×6, some shape-only clues | 8×8, mostly shape-only clues |
+| Swatches | 5×5, every clue numbered, some any-shape crosses | 6×6, some clues without numbers, now and then an empty cross | 8×8, mostly shape-only clues and a few empty crosses |
 
 ## Why it's fun to play
 
@@ -82,7 +82,7 @@ Every game sets its own levels. Today's games each have three:
 - **Drawing is forgiving.** Zap's line follows your finger smoothly. In Swatches you can start a drag anywhere, even on the clue, and sweep one way and then back the other. You can also grab a drawn swatch by its edge to resize it. Drags that overshoot the board's edge still land on the edge row.
 - **You can challenge a friend.** Every board has a code, and *Challenge a friend* shares a link that rebuilds exactly the same puzzle.
 - **It keeps your place.** Games in progress, best times, averages and hint-free streaks are all saved on the device.
-- **Settings like the originals.** The gear menu in each game has sound, vibration and a timer you can hide, plus Auto-check (red marks for broken rules) in Kings, Tangle and Sixdoku, Auto-place X's in Kings, and the remaining-number counts and section highlights in Sixdoku.
+- **Settings like the originals.** The gear menu in each game has sound, vibration and a timer you can hide, plus Auto-check (red marks for broken rules) in Kings, Tangle and Sixdoku, Auto-place X's in Kings, and the remaining-number counts, Hide finished numbers and section highlights in Sixdoku. Clear empties the board, and Undo brings it back.
 - **It's a real app.** Install it from the home screen card or the ⋯ menu and it opens full screen with its own icon and launch screen, and plays offline. When a new version comes out, it asks before updating. It supports dark mode and full keyboard play, and it respects reduced motion.
 
 <p align="center">
@@ -170,7 +170,7 @@ player is on.
 | **Tangle** | Builds a valid grid of suns and moons, adds `=` and `×` signs, then removes givens one at a time while the answer stays unique. |
 | **Zap** | Builds a random path through every cell. It then adds checkpoints and walls that rule out every rival path, and drops any checkpoint it doesn't need. |
 | **Sixdoku** | Fills a valid grid, then removes digits while the answer stays unique, down to a target for each level. |
-| **Swatches** | Splits the grid into random rectangles, places a clue in each, and checks uniqueness with an exact-cover search. Harder levels hide sizes and shapes as long as the answer stays unique. |
+| **Swatches** | Splits the grid into random rectangles, places a clue in each, and checks uniqueness with an exact-cover search. Each puzzle then takes its own mix of number-and-shape clues, shape-only clues, any-shape crosses and empty "mystery" crosses, keeping only removals that leave the answer unique. |
 
 Puzzles come from a seeded random generator, so the same code always rebuilds the same board.
 Generation runs in a Web Worker, so the screen never freezes. The puzzle tests generate

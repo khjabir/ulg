@@ -28,10 +28,16 @@ function HowTo() {
               <ClueBadge size={5} shape={null} color={4} /> any rectangle
             </span>
             <span>
-              <ClueBadge size={null} shape="tall" color={1} /> size is yours to find
+              <ClueBadge size={null} shape="wide" color={1} /> wide, any size
+            </span>
+            <span>
+              <ClueBadge size={null} shape={null} color={6} /> anything that fits
             </span>
           </span>
-          <span>The clue&rsquo;s outline gives the shape. A clue without a number can be any size that fits its shape.</span>
+          <span>
+            The shape behind a clue sets the swatch&rsquo;s shape; crossed dashed bars mean any rectangle. A clue without a
+            number can be any size, so work it out from what&rsquo;s left.
+          </span>
         </li>
       </ul>
       <p className="fine">

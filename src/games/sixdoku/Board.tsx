@@ -18,6 +18,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
   const autoCheck = settings.autoCheck !== false;
   const showCounts = settings.countRemaining !== false;
   const showSections = settings.highlightSections !== false;
+  const hideFinished = settings.hideFinished === true;
   const bad = useMemo(() => (autoCheck ? conflicts(state.values) : new Set<number>()), [state.values, autoCheck]);
   const marked = useMemo(() => new Set(mark ?? []), [mark]);
   const selDigit = state.values[sel];
@@ -155,13 +156,16 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
         <div className="s-digits" role="group" aria-label="Numbers">
           {[1, 2, 3, 4, 5, 6].map((d) => {
             const left = remaining(d);
+            // Hide finished numbers: a digit placed all six times leaves the keypad.
+            const gone = hideFinished && left === 0;
             return (
               <button
                 key={d}
                 type="button"
-                className={`s-key ${showCounts && left === 0 ? "done" : ""}`}
+                className={`s-key ${showCounts && left === 0 ? "done" : ""} ${gone ? "gone" : ""}`}
                 onClick={() => input(d)}
-                disabled={!interactive}
+                disabled={!interactive || gone}
+                aria-hidden={gone || undefined}
                 aria-label={showCounts ? `${d}, ${left === 0 ? "all placed" : `${left} left`}` : String(d)}
               >
                 {d}

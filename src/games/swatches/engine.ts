@@ -34,15 +34,21 @@ export type SwatchesState = Rect[];
 export const PALETTE_SIZE = 8;
 
 /**
- * How much each level leaves out, as in LinkedIn's week: easy boards number every
- * clue; harder ones drop numbers (leaving shape-only clues), turn some shapes into
- * "any", and on Hard allow a clue with neither. Removals that would make the answer
+ * How much each level leaves out, modelled on LinkedIn's Patches boards (5×5 to
+ * 10×10, a handful of clues, some patches of 10 cells or more). Every clue carries a
+ * shape badge; some badges are the "any" cross, some clues have no number, and on
+ * harder boards a few "mystery" clues have neither. Each puzzle draws its own mix
+ * from these ranges, so no two feel the same. Removals that would make the answer
  * ambiguous are put back, so these are upper limits.
  */
-const LEVELS: Record<string, { size: number; maxArea: number; dropNumbers: number; anyShapes: number; bare: number }> = {
-  easy: { size: 5, maxArea: 6, dropNumbers: 0, anyShapes: 0, bare: 0 },
-  medium: { size: 6, maxArea: 8, dropNumbers: 0.4, anyShapes: 0.15, bare: 0 },
-  hard: { size: 8, maxArea: 12, dropNumbers: 0.75, anyShapes: 0.3, bare: 2 },
+type Range = readonly [number, number];
+const LEVELS: Record<string, { size: number; maxArea: number; dropNumbers: Range; anyShapes: Range; bare: Range }> = {
+  // every clue numbered; some badges are the "any" cross
+  easy: { size: 5, maxArea: 8, dropNumbers: [0, 0], anyShapes: [0.2, 0.5], bare: [0, 0] },
+  // some clues without numbers, crosses, and now and then a mystery clue
+  medium: { size: 6, maxArea: 10, dropNumbers: [0.25, 0.6], anyShapes: [0.2, 0.45], bare: [0, 1] },
+  // mostly shape-only, a few crosses, and up to three mystery clues
+  hard: { size: 8, maxArea: 12, dropNumbers: [0.5, 1], anyShapes: [0.15, 0.4], bare: [1, 3] },
 };
 
 /** The smallest swatch: LinkedIn's Patches never has single-cell patches. */
@@ -204,22 +210,28 @@ export function generate(level: string, seed: number): SwatchesPuzzle {
       (clues[k] as unknown as Record<string, unknown>)[field] = before;
       return false;
     };
-    const order = shuffle(rng, range(clues.length));
+    const pick = ([lo, hi]: Range) => lo + (hi - lo) * rng();
+    const n = clues.length;
+    // 1. Shape-only clues: the number goes, the badge stays.
+    const wantDropped = Math.round(n * pick(cfg.dropNumbers));
     let dropped = 0;
-    for (const k of order) {
-      if (dropped >= Math.round(clues.length * cfg.dropNumbers)) break;
+    for (const k of shuffle(rng, range(n))) {
+      if (dropped >= wantDropped) break;
       if (keepUnique(k, "size")) dropped++;
     }
+    // 2. "Any" crosses on numbered clues: the size stays, the shape is yours.
+    const wantAny = Math.round(n * pick(cfg.anyShapes));
     let anyShapes = 0;
+    for (const k of shuffle(rng, range(n))) {
+      if (anyShapes >= wantAny) break;
+      if (clues[k].size !== null && keepUnique(k, "shape")) anyShapes++;
+    }
+    // 3. Mystery clues: an empty cross, neither size nor shape.
+    const wantBare = Math.round(pick(cfg.bare));
     let bare = 0;
-    for (const k of shuffle(rng, range(clues.length))) {
-      if (anyShapes >= Math.round(clues.length * cfg.anyShapes)) break;
-      const wouldBeBare = clues[k].size === null;
-      if (wouldBeBare && bare >= cfg.bare) continue;
-      if (keepUnique(k, "shape")) {
-        anyShapes++;
-        if (wouldBeBare) bare++;
-      }
+    for (const k of shuffle(rng, range(n))) {
+      if (bare >= wantBare) break;
+      if (clues[k].size === null && clues[k].shape !== null && keepUnique(k, "shape")) bare++;
     }
     return { game: "swatches", level, seed, rows, cols, clues, solution: rects };
   }

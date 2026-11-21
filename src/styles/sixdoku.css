@@ -242,3 +242,8 @@
   transform: translateY(0.8cqi);
   box-shadow: 0 0.1cqi 0 var(--line);
 }
+
+/* Hide finished numbers: the key keeps its place but disappears. */
+.s-key.gone {
+  visibility: hidden;
+}

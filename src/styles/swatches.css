@@ -114,35 +114,45 @@
   pointer-events: none;
 }
 
+/* A clue: the cell is tinted with its colour, with a darker shape behind the number.
+   Square, wide and tall are solid; "any" is two crossed dashed bars. */
 .p-clue {
-  --s: calc(var(--cell) * 0.58);
+  position: relative;
   display: grid;
   place-items: center;
-  width: var(--s);
-  height: var(--s);
-  background: var(--pc);
+  width: calc(var(--cell) * 0.9);
+  height: calc(var(--cell) * 0.9);
+  border-radius: calc(var(--cell) * 0.16);
+  background: color-mix(in srgb, var(--pc) 30%, var(--paper));
   color: #1d1d1f;
+}
+
+.p-clue svg {
+  position: absolute;
+  inset: calc(var(--cell) * 0.06);
+  width: calc(100% - var(--cell) * 0.12);
+  height: calc(100% - var(--cell) * 0.12);
+  overflow: visible;
+}
+
+.p-clue rect {
+  fill: color-mix(in srgb, var(--pc) 82%, #1d1d1f);
+}
+
+.p-clue rect.bar {
+  fill: color-mix(in srgb, var(--pc) 34%, transparent);
+  stroke: color-mix(in srgb, var(--pc) 62%, #1d1d1f);
+  stroke-width: 5;
+  stroke-dasharray: 9 6;
+  stroke-linecap: round;
+}
+
+.p-clue b {
+  position: relative;
   font-weight: 800;
-  font-size: calc(var(--cell) * 0.3);
+  font-size: calc(var(--cell) * 0.34);
   line-height: 1;
-  border: max(2px, calc(var(--cell) * 0.045)) solid #1d1d1f;
-  border-radius: 22%;
-}
-
-.p-clue.shape-wide {
-  width: calc(var(--cell) * 0.76);
-  height: calc(var(--cell) * 0.44);
-  border-radius: 18% / 30%;
-}
-
-.p-clue.shape-tall {
-  width: calc(var(--cell) * 0.44);
-  height: calc(var(--cell) * 0.76);
-  border-radius: 30% / 18%;
-}
-
-.p-clue.shape-any {
-  border-radius: 50%;
+  text-shadow: 0 0 calc(var(--cell) * 0.08) color-mix(in srgb, var(--pc) 55%, #fff);
 }
 
 .p-cell.hinted {
@@ -232,5 +242,44 @@
   40% {
     transform: scale(1.06);
     filter: brightness(1.15) saturate(1.2);
+  }
+}
+
+/* Solved: like Patches, the board turns into an abstract picture. The swatches
+   close up into flat blocks of colour with bold black lines between them, and the
+   clues fade away. */
+.p-grid.won {
+  background-image: none;
+  background-color: #1d1d1f;
+}
+
+.p-grid.won .p-swatch {
+  padding: 0;
+}
+
+.p-grid.won .p-swatch::before {
+  inset: 0;
+  border-radius: 0;
+  background: var(--pc);
+  box-shadow: inset 0 0 0 0.75cqi #1d1d1f;
+  transition:
+    inset 520ms cubic-bezier(0.3, 0.8, 0.3, 1),
+    border-radius 520ms ease,
+    background-color 520ms ease,
+    box-shadow 520ms ease;
+}
+
+.p-grid.won .p-clue {
+  opacity: 0;
+  scale: 0.5;
+  transition:
+    opacity 380ms ease 200ms,
+    scale 380ms ease 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .p-grid.won .p-swatch::before,
+  .p-grid.won .p-clue {
+    transition: none;
   }
 }

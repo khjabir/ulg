@@ -599,8 +599,9 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
           <span className="hint-meter" aria-hidden />
           <HintIcon /> Hint
         </button>
+        {/* "Clear", as in the LinkedIn games. Undo brings the board back. */}
         <button type="button" className="btn" onClick={reset} disabled={!play || won || atStart}>
-          <ResetIcon /> Reset
+          <ResetIcon /> Clear
         </button>
       </div>
 

@@ -31,10 +31,31 @@ const boxStyle = (r: Rect): CSSProperties =>
   ({ "--r0": r.r0, "--c0": r.c0, "--h": r.r1 - r.r0 + 1, "--w": r.c1 - r.c0 + 1, "--d": r.r0 + r.c0 }) as CSSProperties;
 
 
+/**
+ * A clue, drawn like Patches: a tinted cell with a darker shape behind the number.
+ * Square, wide bar and tall bar ask for that shape; two crossed dashed bars mean any
+ * rectangle. A clue without a number shows the shape alone, and its size is yours to
+ * find.
+ */
 export function ClueBadge({ size, shape, color }: { size: number | null; shape: string | null; color: number }) {
+  const kind = shape ?? "any";
   return (
-    <span className={`p-clue shape-${shape ?? "any"}`} style={{ "--pc": SWATCH_COLORS[color] } as CSSProperties}>
-      {size ?? ""}
+    <span
+      className={`p-clue shape-${kind} ${size === null ? "blank" : ""}`}
+      style={{ "--pc": SWATCH_COLORS[color] } as CSSProperties}
+    >
+      <svg viewBox="0 0 100 100" aria-hidden>
+        {kind === "square" && <rect x="17" y="17" width="66" height="66" rx="12" />}
+        {kind === "wide" && <rect x="7" y="28" width="86" height="44" rx="11" />}
+        {kind === "tall" && <rect x="28" y="7" width="44" height="86" rx="11" />}
+        {kind === "any" && (
+          <>
+            <rect className="bar" x="7" y="30" width="86" height="40" rx="10" />
+            <rect className="bar" x="30" y="7" width="40" height="86" rx="10" />
+          </>
+        )}
+      </svg>
+      {size !== null && <b>{size}</b>}
     </span>
   );
 }
@@ -286,7 +307,7 @@ export function Board({ puzzle, state, apply, interactive, won, mark, dealing, s
     <div className={`tray p-tray ${dealing ? "deal" : ""}`} style={{ "--rows": rows, "--cols": cols } as CSSProperties}>
       <div
         ref={gridRef}
-        className={`p-grid ${keyboard ? "kbd" : ""}`}
+        className={`p-grid ${keyboard ? "kbd" : ""} ${won ? "won" : ""}`}
         role="application"
         tabIndex={0}
         aria-label={`Swatches board, ${rows} by ${cols}, ${clues.length} clues, ${state.length} swatches drawn. Arrow keys move, Enter starts and finishes a swatch, Delete removes the swatch under the cursor.`}
