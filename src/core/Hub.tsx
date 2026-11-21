@@ -9,12 +9,21 @@ import { SoundOffIcon, SoundOnIcon } from "./Icons";
 import { AppMenu, InstallCard } from "./AppChrome";
 import { useApp } from "./app";
 import { Wordmark } from "./Wordmark";
+import { openGame, useScreen } from "./nav";
 
 type Summary = { solved: number; inProgress: boolean };
+
+/** Home plays its entrance once per visit to the app, not every time you come back to it. */
+let introPlayed = false;
 
 const LOGO = `${process.env.NEXT_PUBLIC_RELATIVE_ASSETS === "1" ? "." : (process.env.NEXT_PUBLIC_BASE_PATH ?? "")}/logo.svg`;
 
 export function Hub() {
+  useScreen("home");
+  const [intro] = useState(() => !introPlayed);
+  useEffect(() => {
+    introPlayed = true;
+  }, []);
   const [sums, setSums] = useState<Record<string, Summary>>({});
   const [sound, setSound] = useState(true);
   const [menu, setMenu] = useState(false);
@@ -29,7 +38,7 @@ export function Hub() {
   const total = Object.values(sums).reduce((n, s) => n + s.solved, 0);
 
   return (
-    <main className="hub">
+    <main className={`hub ${intro ? "" : "settled"}`}>
       <header className="hub-head">
         <div className="hub-head-row">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -62,6 +71,13 @@ export function Hub() {
               <Link
                 href={`/${g.id}/`}
                 className="hub-card"
+                onClick={(e) => {
+                  // A plain tap opens the game like an app screen; a modified click
+                  // (new tab, new window) is left to the browser.
+                  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                  e.preventDefault();
+                  openGame(`/${g.id}/`);
+                }}
                 style={{ "--felt": g.theme.felt, "--felt-deep": g.theme.feltDeep } as CSSProperties}
               >
                 <span className="hub-icon">

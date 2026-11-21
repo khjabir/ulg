@@ -19,6 +19,7 @@ import {
 } from "./storage";
 import { formatTime } from "./format";
 import { Dialog } from "./Dialog";
+import { goHome, useScreen } from "./nav";
 import { Confetti } from "./Confetti";
 import { onSoundChange, setSoundOn, sfx, soundOn } from "./sound";
 import { afterSplash } from "./app";
@@ -81,6 +82,8 @@ function useStopwatch(running: boolean) {
 }
 
 export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P, S, M> }) {
+  // A game slid in from Home skips its own settle-in animation.
+  const slid = useScreen("game");
   const levelIds = useMemo(() => def.levels.map((l) => l.id), [def]);
   const hintWait = useCallback((used: number) => def.hintWait?.(used) ?? defaultHintWait(), [def]);
 
@@ -119,7 +122,16 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
   const movedRef = useRef<{ sound: string; state: S } | null>(null);
   const lastProblem = useRef("");
 
-  const running = !!play && play.status === "playing" && !loading && dialog === null && visible;
+  // The clock doesn't run under the splash screen either.
+  const [splashUp, setSplashUp] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    void afterSplash().then(() => alive && setSplashUp(false));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const running = !!play && play.status === "playing" && !loading && dialog === null && visible && !splashUp;
   const stopwatch = useStopwatch(running);
   const state = play ? play.history[play.history.length - 1] : null;
 
@@ -467,11 +479,20 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
 
   return (
     <main
-      className={`app game-${def.id}`}
+      className={`app game-${def.id} ${slid ? "slid" : ""}`}
       style={{ "--felt": def.theme.felt, "--felt-deep": def.theme.feltDeep } as CSSProperties}
     >
       <header className="top">
-        <Link href="/" className="back-link" aria-label="All games">
+        <Link
+          href="/"
+          className="back-link"
+          aria-label="All games"
+          onClick={(e) => {
+            if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            goHome();
+          }}
+        >
           <BackIcon />
         </Link>
         <h1 className="game-title">{def.name}</h1>
@@ -705,7 +726,16 @@ export function GameShell<P extends BasePuzzle, S, M>({ def }: { def: GameDef<P,
               <button type="button" className="btn" onClick={share}>
                 <ShareIcon /> Challenge a friend
               </button>
-              <Link href="/" className="btn ghost">
+              <Link
+                href="/"
+                className="btn ghost"
+                onClick={(e) => {
+                  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                  e.preventDefault();
+                  goHome();
+                  setDialog(null);
+                }}
+              >
                 Play another game
               </Link>
             </div>

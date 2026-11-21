@@ -389,6 +389,11 @@
   animation-delay: 150ms;
 }
 
+/* A game that slid in from Home is already in place. */
+.app.slid > * {
+  animation: none;
+}
+
 .icon-btn,
 .back-link {
   transition:

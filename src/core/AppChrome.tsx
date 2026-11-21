@@ -13,6 +13,7 @@ import {
   type AppState,
 } from "./app";
 import { Dialog } from "./Dialog";
+import { useAppNavigation } from "./nav";
 import { AddSquareIcon, CheckIcon, CloseIcon, InstallIcon, IosShareIcon, MenuIcon, RefreshIcon } from "./Icons";
 
 const LOGO = `${process.env.NEXT_PUBLIC_RELATIVE_ASSETS === "1" ? "." : (process.env.NEXT_PUBLIC_BASE_PATH ?? "")}/logo.svg`;
@@ -21,6 +22,7 @@ const CARD_SNOOZE = 14 * 24 * 3600 * 1000;
 
 /** Mounted once in the layout: starts install/update handling, lifts the splash, shows the update banner. */
 export function AppRuntime() {
+  useAppNavigation();
   useEffect(() => {
     startApp();
     hideSplash();

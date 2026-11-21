@@ -377,6 +377,61 @@ dialog[open] {
   navigation: auto;
 }
 
+/* Screen changes inside the app slide like a phone app: a game comes in from the
+   right over Home; going back slides it away and Home returns from the left. */
+html[data-nav]::view-transition-group(root) {
+  animation-duration: 340ms;
+  animation-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+html[data-nav]::view-transition-old(root),
+html[data-nav]::view-transition-new(root) {
+  mix-blend-mode: normal;
+  animation-duration: 340ms;
+  animation-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
+  animation-fill-mode: both;
+}
+
+html[data-nav="forward"]::view-transition-old(root) {
+  animation-name: screen-under;
+}
+html[data-nav="forward"]::view-transition-new(root) {
+  animation-name: screen-in;
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.18);
+}
+
+html[data-nav="back"]::view-transition-old(root) {
+  z-index: 1;
+  animation-name: screen-out;
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.18);
+}
+html[data-nav="back"]::view-transition-new(root) {
+  animation-name: screen-over;
+}
+
+@keyframes screen-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes screen-out {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes screen-under {
+  to {
+    transform: translateX(-28%);
+    filter: brightness(0.8);
+  }
+}
+@keyframes screen-over {
+  from {
+    transform: translateX(-28%);
+    filter: brightness(0.8);
+  }
+}
+
 @keyframes rise {
   from {
     opacity: 0;
